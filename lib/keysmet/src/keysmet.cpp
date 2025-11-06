@@ -165,9 +165,93 @@ void setupI2S() {
 }
 
 
+
+void shutdownLoop() {
+    pixels.fill(0xff0000);
+    pixels.show();
+    delay(1000);
+    pixels.fill(0x0);
+    pixels.show();
+    Serial.println("Shutdown initiated");
+    
+    // Wait for menu button to be released
+    Serial.println("Waiting for button release...");
+    while(down(KEY_MENU)) {
+        delay(1);
+        readKeys();
+    }
+    Serial.println("Button released");
+    
+    Serial.println("Disabling DWT");
+    dwt_disable();
+    
+    // Turn off LEDs and peripherals to save power
+    Serial.println("Turning off LEDs and peripherals");
+    pixels.clear();
+    pixels.show();
+    digitalWrite(PIN_PWR_LED, LOW);
+    digitalWrite(PIN_GYRO_PWR, LOW);
+    digitalWrite(LED_BLUE, LOW);
+    
+    // Stop I2S if it's running
+    if(audioCallback != nullptr) {
+        Serial.println("Stopping I2S");
+        NRF_I2S->TASKS_STOP = 1;
+        NRF_I2S->ENABLE = 0;
+    }
+    
+    // Delete audio task if it exists
+    if(audioTaskHandle != NULL) {
+        Serial.println("Deleting audio task");
+        vTaskDelete(audioTaskHandle);
+        audioTaskHandle = NULL;
+    }
+    
+    // Suspend the FreeRTOS scheduler to stop all tasks
+    Serial.println("Suspending FreeRTOS scheduler");
+    vTaskSuspendAll();
+    
+    // Disable SysTick (FreeRTOS tick interrupt) to prevent CPU wake
+    Serial.println("Disabling SysTick");
+    SysTick->CTRL = 0;
+    
+    // Configure menu button for sense (wake on low)
+    // This allows the button press to generate an event that wakes the CPU
+    Serial.println("Configuring GPIO sense on menu button");
+    NRF_GPIO->PIN_CNF[PIN_MENU] = (GPIO_PIN_CNF_SENSE_Low << GPIO_PIN_CNF_SENSE_Pos)
+                                 | (GPIO_PIN_CNF_PULL_Pullup << GPIO_PIN_CNF_PULL_Pos)
+                                 | (GPIO_PIN_CNF_INPUT_Connect << GPIO_PIN_CNF_INPUT_Pos)
+                                 | (GPIO_PIN_CNF_DIR_Input << GPIO_PIN_CNF_DIR_Pos);
+    
+    Serial.println("Entering low-power loop - press menu to reset");
+    Serial.flush();  // Ensure all serial data is sent before sleeping
+    
+    // Enter low-power loop
+    while(true) {
+        // Clear any pending events
+        __SEV();
+        __WFE();
+        
+        // Put CPU to sleep - will wake on button press event
+        __WFE();
+        
+        // Check if menu button is pressed (active low)
+        if(digitalRead(PIN_MENU) == LOW) {
+            // Small busy-wait for debounce (can't use delay() as scheduler is suspended)
+            for(volatile int i = 0; i < 100000; i++);
+            
+            // Confirm button is still pressed
+            if(digitalRead(PIN_MENU) == LOW) {
+                // Button confirmed - reset system
+                NVIC_SystemReset();
+            }
+        }
+    }
+}
+
+
 } // end anonymous namespace
 
-// Public API Functions - accessible from main.cpp
 void setColor(int key, int color) {
 	// Key 0 (MENU) doesn't have a pixel, only keys 1-10 have pixels
 	if(key < 1 || key > 10) return;
@@ -204,7 +288,7 @@ bool release(int key) {
 bool hold(int key, int ms) {
 	if(key < 0 || key >= KEY_COUNT)
 		return false;
-	if(keys[key].pressTime < 0)
+	if(!keys[key].down)
 		return false;
 	int64_t elapsed = getMicroTime() - keys[key].pressTime;
 	return elapsed >= (int64_t)ms * 1000;
@@ -268,6 +352,10 @@ void ksm_loop() {
     if(checkMenuStreakPress()) {
         Serial.println("Menu reset detected");
         resetBootloader();
+    }
+
+    if(hold(0, 1000)) {
+        shutdownLoop();
     }
 }
 
