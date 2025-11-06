@@ -58,7 +58,7 @@ bool hold(int key, int ms);
 void setRumble(bool on);
 long long getMicroTime();
 double getTime();
-void ksm_init();
-void ksm_loop();
 void setupAudio(std::function<void(int16_t*, int)> callback);
 
+void ksm_init();
+void ksm_loop();

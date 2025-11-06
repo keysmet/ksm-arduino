@@ -73,12 +73,48 @@ void readKeys() {
         if(keys[i].down && !keys[i].wasDown) {
             keys[i].pressTime = getMicroTime();
         }
-        if(!keys[i].down) {
-            keys[i].pressTime = -1;
-        }
     }
 }
 
+int menuPressCount = 0;
+int64_t lastMenuPressTime = 0;
+
+bool checkMenuStreakPress() {
+    const int STREAK_COUNT = 3;
+    const int MAX_INTERVAL_MS = 200;
+    
+    if(press(KEY_MENU)) {
+        int64_t currentTime = getMicroTime();
+        int64_t elapsed = (menuPressCount > 0) ? (currentTime - lastMenuPressTime) / 1000 : 0;
+        
+        if(menuPressCount > 0 && elapsed > MAX_INTERVAL_MS) {
+            menuPressCount = 1;
+        } else {
+            menuPressCount++;
+        }
+        
+        lastMenuPressTime = currentTime;
+        
+        if(menuPressCount >= STREAK_COUNT) {
+            menuPressCount = 0;
+            return true;
+        }
+    }
+    
+    if(menuPressCount > 0) {
+        int64_t elapsed = (getMicroTime() - lastMenuPressTime) / 1000;
+        if(elapsed > MAX_INTERVAL_MS) {
+            menuPressCount = 0;
+        }
+    }
+    
+    return false;
+}
+
+void resetBootloader() {
+    NRF_POWER->GPREGRET = 0x57;
+    NVIC_SystemReset();
+}
 
 const int I2S_BUFFER_SIZE = 256;
 int16_t i2sbuffers[2][ I2S_BUFFER_SIZE<<1 ];
@@ -230,7 +266,13 @@ void ksm_loop() {
     
     delay(1);
     readKeys();
+
+    if(checkMenuStreakPress()) {
+        Serial.println("Menu reset detected");
+        resetBootloader();
+    }
 }
+
 
 void setupAudio(std::function<void(int16_t*, int)> callback) {
 	audioCallback = callback;
