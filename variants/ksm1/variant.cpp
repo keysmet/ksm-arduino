@@ -23,6 +23,8 @@
 #include "wiring_digital.h"
 #include "nrf.h"
 
+#include "../../lib/keysmet/src/keysmet.h"
+
 const uint32_t g_ADigitalPinMap[] =
 {
   // P0
@@ -38,7 +40,4 @@ const uint32_t g_ADigitalPinMap[] =
 
 
 void initVariant() {
-}
-
-void yield() {
 }

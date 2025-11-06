@@ -47,7 +47,10 @@ enum KEY {
 void setColor(int key, int color);
 void setRGB(int key, int r, int g, int b);
 void setHSV(int key, int h, int s, int v);
-bool isDown(int key);
+bool down(int key);
+bool press(int key);
+bool release(int key);
+bool hold(int key, int ms);
 void setRumble(bool on);
 long long getMicroTime();
 double getTime();

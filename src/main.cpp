@@ -8,10 +8,8 @@ void setup() {
 
 void loop() {
 	for(int i=1; i<=10; ++i) {
-		if(isDown(i)) {
+		if(hold(i, 1000)) {
 			setColor(i, 0x200000);
-		} else {
-			setColor(i, 0);
 		}
 	}
 

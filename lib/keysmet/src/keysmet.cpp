@@ -10,14 +10,20 @@ static const PIN KEY_PINS[] = {
 };
 
 namespace {
-// Internal implementation details - not accessible outside this file
+
+class KeyState {
+public:
+    int color = 0;
+    int64_t pressTime = -1;
+    bool down = false;
+    bool wasDown = false;
+};
 
 Adafruit_NeoPixel pixels(10, PIN_LED, NEO_GRB + NEO_KHZ800);
 int PIX_INDICES[] = { 9, 8, 7, 6, 5, 4, 3, 2, 1, 0 };
 
-// State arrays
-int keyStates[KEY_COUNT];
-int pixelsBuffer[10];
+// State array for all keys
+KeyState keys[KEY_COUNT];
 bool flushPixels = false;
 
 // Timing variables
@@ -60,9 +66,16 @@ void setupPins() {
 }
 
 void readKeys() {
-    for(int i=0; i<=10; ++i) {
-        int idx = KEY_PINS[i];
-        keyStates[i] = digitalRead(idx) == LOW;
+    for(int i=0; i<KEY_COUNT; ++i) {
+        keys[i].wasDown = keys[i].down;
+        keys[i].down = digitalRead(KEY_PINS[i]) == LOW;
+        
+        if(keys[i].down && !keys[i].wasDown) {
+            keys[i].pressTime = getMicroTime();
+        }
+        if(!keys[i].down) {
+            keys[i].pressTime = -1;
+        }
     }
 }
 
@@ -70,8 +83,9 @@ void readKeys() {
 
 // Public API Functions - accessible from main.cpp
 void setColor(int key, int color) {
+	// Key 0 (MENU) doesn't have a pixel, only keys 1-10 have pixels
 	if(key < 1 || key > 10) return;
-	pixelsBuffer[PIX_INDICES[key-1]] = color;
+	keys[key].color = color;
 	flushPixels = true;
 }
 
@@ -83,10 +97,31 @@ void setHSV(int key, int h, int s, int v) {
 	setColor(key, pixels.ColorHSV(h, s, v));
 }
 
-bool isDown(int key) {
+bool down(int key) {
 	if(key < 0 || key >= KEY_COUNT)
 		return false;
-	return keyStates[key];
+	return keys[key].down;
+}
+
+bool press(int key) {
+	if(key < 0 || key >= KEY_COUNT)
+		return false;
+	return keys[key].down && !keys[key].wasDown;
+}
+
+bool release(int key) {
+	if(key < 0 || key >= KEY_COUNT)
+		return false;
+	return !keys[key].down && keys[key].wasDown;
+}
+
+bool hold(int key, int ms) {
+	if(key < 0 || key >= KEY_COUNT)
+		return false;
+	if(keys[key].pressTime < 0)
+		return false;
+	int64_t elapsed = getMicroTime() - keys[key].pressTime;
+	return elapsed >= (int64_t)ms * 1000;
 }
 
 void setRumble(bool on) {
@@ -112,7 +147,7 @@ void ksm_init() {
     digitalWrite(PIN_GYRO_PWR, HIGH);
 
     delay(10);
-
+ 
     // setupI2S();
 
     // Wire.setPins(PIN::I2C_SDA, PIN::I2C_SCL);
@@ -140,8 +175,10 @@ void ksm_init() {
 
 void ksm_loop() {
     if(flushPixels) {
-		for(int i=0; i<10; ++i)
-			pixels.setPixelColor(i, pixelsBuffer[i]);
+		for(int i=1; i<=10; ++i) {
+			int pixelIdx = PIX_INDICES[i-1];
+			pixels.setPixelColor(pixelIdx, keys[i].color);
+		}
 		pixels.show();
 		flushPixels = false;
 	}
