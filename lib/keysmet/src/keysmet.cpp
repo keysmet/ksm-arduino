@@ -111,6 +111,12 @@ bool checkMenuStreakPress() {
 }
 
 void resetBootloader() {
+    pixels.fill(0x0000FF);
+    pixels.show();
+    delay(500);
+    pixels.fill(0x0);
+    pixels.show();
+
     NRF_POWER->GPREGRET = 0x57;
     NVIC_SystemReset();
 }
@@ -169,7 +175,7 @@ void setupI2S() {
 void shutdownLoop() {
     pixels.fill(0xff0000);
     pixels.show();
-    delay(1000);
+    delay(500);
     pixels.fill(0x0);
     pixels.show();
     Serial.println("Shutdown initiated");
