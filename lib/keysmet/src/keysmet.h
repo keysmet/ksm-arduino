@@ -49,8 +49,8 @@ enum KEY {
 };
 
 void setColor(int key, int color);
-void setRGB(int key, int r, int g, int b);
-void setHSV(int key, int h, int s, int v);
+void setRGB(int key, float r, float g, float b);
+void setHSV(int key, float h, float s, float v);
 bool down(int key);
 bool press(int key);
 bool release(int key);

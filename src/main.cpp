@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include "keysmet.h"
+#include <LSM6DS3.h>
 
 const float FREQUENCY = 440.0f;
 const int PHASE_SIZE = int(SAMPLE_RATE / FREQUENCY + 0.5f);
@@ -40,6 +41,7 @@ void setup() {
 	ksm_init();
 	initPhaseTable();
 	setupAudio(audioLoop);
+	IMU.begin();
 }
 
 void loop() {
@@ -48,6 +50,9 @@ void loop() {
 			setColor(i, 0x200000);
 		}
 	}
+
+	float rawAccelX, rawAccelY, rawAccelZ;
+	IMU.readAcceleration(rawAccelX, rawAccelY, rawAccelZ);
 
 	ksm_loop();
 }

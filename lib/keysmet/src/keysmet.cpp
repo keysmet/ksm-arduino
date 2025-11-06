@@ -2,7 +2,6 @@
 
 #include <Arduino.h>
 #include <Adafruit_NeoPixel.h>
-#include <LSM6DS3.h>
 
 // Key pins array (must be outside anonymous namespace for external access if needed)
 static const PIN KEY_PINS[] = { 
@@ -176,12 +175,12 @@ void setColor(int key, int color) {
 	flushPixels = true;
 }
 
-void setRGB(int key, int r, int g, int b) {
-	setColor(key, pixels.Color(r, g, b));
+void setRGB(int key, float r, float g, float b) {
+	setColor(key, pixels.Color(int(r * 255.0f), int(g * 255.0f), int(b * 255.0f)));
 }
 
-void setHSV(int key, int h, int s, int v) {
-	setColor(key, pixels.ColorHSV(h, s, v));
+void setHSV(int key, float h, float s, float v) {
+	setColor(key, pixels.ColorHSV(int(h * 65535.0f), int(s * 255.0f), int(v * 255.0f)));
 }
 
 bool down(int key) {
@@ -236,7 +235,6 @@ void ksm_init() {
     delay(10);
 
     Serial.begin(115200);
-    IMU.begin();
 
     NRF_NVMC->ICACHECNF = 1;
     dwt_enable();
