@@ -79,6 +79,57 @@ void readKeys() {
     }
 }
 
+
+const int I2S_BUFFER_SIZE = 256;
+int16_t i2sbuffers[2][ I2S_BUFFER_SIZE<<1 ];
+int curi2sBuff = 0;
+std::function<void(int16_t*, int)> audioCallback = nullptr;
+
+void updateI2S() {
+	int16_t* ptr = &i2sbuffers[curi2sBuff][0];
+	audioCallback(ptr, I2S_BUFFER_SIZE);
+	NRF_I2S->TXD.PTR = (uint32_t)ptr;
+	NRF_I2S->RXTXD.MAXCNT = I2S_BUFFER_SIZE;
+	curi2sBuff = (curi2sBuff+1) % 2;
+}
+
+TaskHandle_t audioTaskHandle;
+int audioBusyTicks = 0;
+int audioTotalTicks = 0;
+void audioTask(void* arg) {
+	while(true) {
+		vTaskDelay(ms2tick(1));
+		if(NRF_I2S->EVENTS_TXPTRUPD) {
+			updateI2S();
+			audioBusyTicks++;
+			NRF_I2S->EVENTS_TXPTRUPD = 0;
+		}
+		++audioTotalTicks;
+	}
+}
+
+void setupI2S() {  
+	NRF_I2S->CONFIG.TXEN = (I2S_CONFIG_TXEN_TXEN_ENABLE << I2S_CONFIG_TXEN_TXEN_Pos);
+	NRF_I2S->CONFIG.MCKEN = (I2S_CONFIG_MCKEN_MCKEN_ENABLE << I2S_CONFIG_MCKEN_MCKEN_Pos);
+	NRF_I2S->CONFIG.MCKFREQ = I2S_CONFIG_MCKFREQ_MCKFREQ_32MDIV11  << I2S_CONFIG_MCKFREQ_MCKFREQ_Pos;
+	NRF_I2S->CONFIG.MODE = I2S_CONFIG_MODE_MODE_MASTER << I2S_CONFIG_MODE_MODE_Pos;
+	NRF_I2S->CONFIG.SWIDTH = I2S_CONFIG_SWIDTH_SWIDTH_16BIT << I2S_CONFIG_SWIDTH_SWIDTH_Pos;
+	NRF_I2S->CONFIG.ALIGN = I2S_CONFIG_ALIGN_ALIGN_LEFT << I2S_CONFIG_ALIGN_ALIGN_Pos;
+	NRF_I2S->CONFIG.FORMAT = I2S_CONFIG_FORMAT_FORMAT_I2S << I2S_CONFIG_FORMAT_FORMAT_Pos;
+	NRF_I2S->CONFIG.CHANNELS = I2S_CONFIG_CHANNELS_CHANNELS_STEREO << I2S_CONFIG_CHANNELS_CHANNELS_Pos;
+    NRF_I2S->CONFIG.RATIO = I2S_CONFIG_RATIO_RATIO_128X << I2S_CONFIG_RATIO_RATIO_Pos;
+
+	NRF_I2S->PSEL.LRCK = (PIN::PIN_I2S_LRCK << I2S_PSEL_LRCK_PIN_Pos);  // RCK = D2
+	NRF_I2S->PSEL.SCK = (PIN::PIN_I2S_BCK << I2S_PSEL_SCK_PIN_Pos);    // BCL/BCK = D0
+	NRF_I2S->PSEL.SDOUT = (PIN::PIN_I2S_DIN << I2S_PSEL_SDOUT_PIN_Pos);  // DIN = D1
+
+	NRF_I2S->ENABLE = 1;
+	NRF_I2S->TASKS_START = 1;
+
+	xTaskCreate(audioTask, "audio", 256, NULL, TASK_PRIO_NORMAL, &audioTaskHandle);
+}
+
+
 } // end anonymous namespace
 
 // Public API Functions - accessible from main.cpp
@@ -147,12 +198,6 @@ void ksm_init() {
     digitalWrite(PIN_GYRO_PWR, HIGH);
 
     delay(10);
- 
-    // setupI2S();
-
-    // Wire.setPins(PIN::I2C_SDA, PIN::I2C_SCL);
-    // Wire.begin();
-    // Wire.setClock(100000); // 100 kHz standard speed
 
     Serial.begin(115200);
     IMU.begin();
@@ -185,4 +230,9 @@ void ksm_loop() {
     
     delay(1);
     readKeys();
+}
+
+void setupAudio(std::function<void(int16_t*, int)> callback) {
+	audioCallback = callback;
+	setupI2S();
 }

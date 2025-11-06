@@ -1,6 +1,10 @@
 #pragma once
 
+#include <functional>
+
 #define PINID(r, i) ((r) * 32 + (i))
+
+const float SAMPLE_RATE = 22727.27f;
 
 enum PIN {
     PIN_MENU		= PINID(1,10),
@@ -56,4 +60,5 @@ long long getMicroTime();
 double getTime();
 void ksm_init();
 void ksm_loop();
+void setupAudio(std::function<void(int16_t*, int)> callback);
 
