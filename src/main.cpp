@@ -161,27 +161,32 @@ void loop() {
 	ksm_loop();
 
 	// Wait for USB to be ready before sending reports
-	if (!TinyUSBDevice.mounted()) {
-		return;
-	}
+	// if (!TinyUSBDevice.mounted()) {
+	// 	return;
+	// }
 
 	int startKey = 0x1E;
 	int newKeyDown = 0;
 	for(int i=1; i<=10; ++i) {
-		if(down(i)) {
-			newKeyDown = startKey + i - 1;
-			// usbHID.keyboardPress(0, char('a' + i - 1));
-			setColor(i, 0x20FF00);
-		} else {
-			// usbHID.keyboardRelease(0);
-			setColor(i, 0x0);
-		}
+		setColor(i, 0x00ff00);
+		delay(500);
+		ksm_loop();  // TODO
+		setColor(i, 0x0);
+		// setColor(i, 0x0);
+		// if(down(i)) {
+		// 	// newKeyDown = startKey + i - 1;
+		// 	// usbHID.keyboardPress(0, char('a' + i - 1));
+		// 	setColor(i, 0x20FF00);
+		// } else {
+		// 	// usbHID.keyboardRelease(0);
+		// 	setColor(i, 0x0);
+		// }
 	}
 
-	if(newKeyDown != keyDown) {
-		keyDown = newKeyDown;
-		uint8_t codes[6] = { (uint8_t)keyDown, 0, 0, 0, 0, 0 };
-		usbHID.keyboardReport(0, 0, codes);
-		bleHID.keyboardReport(0, codes);
-	}
+	// if(newKeyDown != keyDown) {
+	// 	keyDown = newKeyDown;
+	// 	uint8_t codes[6] = { (uint8_t)keyDown, 0, 0, 0, 0, 0 };
+	// 	usbHID.keyboardReport(0, 0, codes);
+	// 	bleHID.keyboardReport(0, codes);
+	// }
 }

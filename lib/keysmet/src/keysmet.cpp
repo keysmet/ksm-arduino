@@ -195,10 +195,7 @@ void shutdownLoop() {
     Serial.println("Turning off LEDs and peripherals");
     pixels.clear();
     pixels.show();
-    digitalWrite(PIN_PWR_LED, LOW);
-    digitalWrite(PIN_GYRO_PWR, LOW);
-    digitalWrite(LED_BLUE, LOW);
-    
+
     // Stop I2S if it's running
     if(audioCallback != nullptr) {
         Serial.println("Stopping I2S");
@@ -216,21 +213,29 @@ void shutdownLoop() {
     // Suspend the FreeRTOS scheduler to stop all tasks
     Serial.println("Suspending FreeRTOS scheduler");
     vTaskSuspendAll();
+
+    // Not sure about that
+    delay(1);
+
+    digitalWrite(PIN_PWR_LED, LOW);
+    digitalWrite(PIN_GYRO_PWR, LOW);
+    digitalWrite(LED_BLUE, LOW);
+    delay(1);
+    digitalWrite(PIN_PWR_ON, LOW);
+    delay(1);
+    // NRF_POWER->TASKS_CONSTLAT = 1;
+    // delay(1);
+    NRF_POWER->TASKS_LOWPWR = 1;
     
     // Disable SysTick (FreeRTOS tick interrupt) to prevent CPU wake
-    Serial.println("Disabling SysTick");
     SysTick->CTRL = 0;
     
     // Configure menu button for sense (wake on low)
     // This allows the button press to generate an event that wakes the CPU
-    Serial.println("Configuring GPIO sense on menu button");
     NRF_GPIO->PIN_CNF[PIN_MENU] = (GPIO_PIN_CNF_SENSE_Low << GPIO_PIN_CNF_SENSE_Pos)
                                  | (GPIO_PIN_CNF_PULL_Pullup << GPIO_PIN_CNF_PULL_Pos)
                                  | (GPIO_PIN_CNF_INPUT_Connect << GPIO_PIN_CNF_INPUT_Pos)
                                  | (GPIO_PIN_CNF_DIR_Input << GPIO_PIN_CNF_DIR_Pos);
-    
-    Serial.println("Entering low-power loop - press menu to reset");
-    Serial.flush();  // Ensure all serial data is sent before sleeping
     
     // Enter low-power loop
     while(true) {
