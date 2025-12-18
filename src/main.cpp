@@ -110,12 +110,8 @@ namespace ble {
 
 } // ble
 
-const float FREQ_START = 440.0f;
-const float FREQ_END = 880.0f;  // 440 * 2
-const float SWEEP_DURATION = 2.0f;  // seconds
-const int SWEEP_SAMPLES = int(SAMPLE_RATE * SWEEP_DURATION);
-
-const int PHASE_SIZE = int(SAMPLE_RATE / FREQ_START + 0.5f);
+const float FREQUENCY = 440.0f;
+const int PHASE_SIZE = int(SAMPLE_RATE / FREQUENCY + 0.5f);
 int16_t phaseTable[PHASE_SIZE];
 
 void initPhaseTable() {
@@ -127,23 +123,17 @@ void initPhaseTable() {
 }
 
 float phaseIndex = 0.0f;
-int sweepPosition = 0;
-int16_t amplitude = 0;
+const float phaseIncrement = float(PHASE_SIZE) * FREQUENCY / SAMPLE_RATE;
 
 void audioLoop(int16_t* ptr, int count) {
     for (int i = 0; i < count; ++i) {
-        // Calculate current frequency based on sweep position
-        float t = float(sweepPosition) / float(SWEEP_SAMPLES);
-        float currentFreq = FREQ_START + t * (FREQ_END - FREQ_START);
-        float phaseIncrement = float(PHASE_SIZE) * currentFreq / SAMPLE_RATE;
-        
         int idx = int(phaseIndex);
         float frac = phaseIndex - idx;
         int nextIdx = (idx + 1) % PHASE_SIZE;
         
         int16_t sample1 = phaseTable[idx];
         int16_t sample2 = phaseTable[nextIdx];
-        int16_t iv = amplitude *int16_t(sample1 + frac * (sample2 - sample1));
+        int16_t iv = int16_t(sample1 + frac * (sample2 - sample1));
         
         *ptr++ = iv;
         *ptr++ = iv;
@@ -152,13 +142,15 @@ void audioLoop(int16_t* ptr, int count) {
         while(phaseIndex >= PHASE_SIZE) {
             phaseIndex -= PHASE_SIZE;
         }
-        
-        // Advance sweep position, loop back after 2 seconds
-        sweepPosition++;
-        if(sweepPosition >= SWEEP_SAMPLES) {
-            sweepPosition = 0;
-        }
     }
+}
+
+// Some platforms need an emulated unplug/plug event to refresh composite descriptors
+void refreshUSBDescriptors()
+{
+	TinyUSBDevice.detach();
+  	// If needed, a small delay can be added here
+  	TinyUSBDevice.attach();
 }
 
 void setup() {
@@ -169,6 +161,7 @@ void setup() {
 	usbHID.begin();
 	ble::init();
 	ble::advertise(true);
+	refreshUSBDescriptors();
 }
 
 
@@ -177,38 +170,27 @@ void loop() {
 	ksm_loop();
 
 	// Wait for USB to be ready before sending reports
-	// if (!TinyUSBDevice.mounted()) {
-	// 	return;
-	// }
-
-	if(down(KEY_1)) {
-		amplitude = 1;
-	} else {
-		amplitude = 0;
+	if (!TinyUSBDevice.mounted()) {
+		return;
 	}
 
 	int startKey = 0x1E;
 	int newKeyDown = 0;
 	for(int i=1; i<=10; ++i) {
-		// setColor(i, 0x00ff00);
-		// delay(500);
-		// ksm_loop();  // TODO
-		// setColor(i, 0x0);
-		// setColor(i, 0x0);
-		// if(down(i)) {
-		// 	// newKeyDown = startKey + i - 1;
-		// 	// usbHID.keyboardPress(0, char('a' + i - 1));
-		// 	setColor(i, 0x20FF00);
-		// } else {
-		// 	// usbHID.keyboardRelease(0);
-		// 	setColor(i, 0x0);
-		// }
+		if(down(i)) {
+			newKeyDown = startKey + i - 1;
+			// usbHID.keyboardPress(0, char('a' + i - 1));
+			setColor(i, 0x20FF00);
+		} else {
+			// usbHID.keyboardRelease(0);
+			setColor(i, 0x0);
+		}
 	}
 
-	// if(newKeyDown != keyDown) {
-	// 	keyDown = newKeyDown;
-	// 	uint8_t codes[6] = { (uint8_t)keyDown, 0, 0, 0, 0, 0 };
-	// 	usbHID.keyboardReport(0, 0, codes);
-	// 	bleHID.keyboardReport(0, codes);
-	// }
+	if(newKeyDown != keyDown) {
+		keyDown = newKeyDown;
+		uint8_t codes[6] = { (uint8_t)keyDown, 0, 0, 0, 0, 0 };
+		usbHID.keyboardReport(0, 0, codes);
+		bleHID.keyboardReport(0, codes);
+	}
 }
