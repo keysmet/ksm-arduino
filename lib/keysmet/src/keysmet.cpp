@@ -170,8 +170,6 @@ void setupI2S() {
 	xTaskCreate(audioTask, "audio", 256, NULL, TASK_PRIO_NORMAL, &audioTaskHandle);
 }
 
-
-
 void shutdownLoop() {
     pixels.fill(0xff0000);
     pixels.show();
@@ -195,48 +193,48 @@ void shutdownLoop() {
     Serial.println("Turning off LEDs and peripherals");
     pixels.clear();
     pixels.show();
-
+    
     // Stop I2S if it's running
     if(audioCallback != nullptr) {
         Serial.println("Stopping I2S");
         NRF_I2S->TASKS_STOP = 1;
         NRF_I2S->ENABLE = 0;
     }
-    
-    // Delete audio task if it exists
-    if(audioTaskHandle != NULL) {
-        Serial.println("Deleting audio task");
-        vTaskDelete(audioTaskHandle);
-        audioTaskHandle = NULL;
-    }
-    
+
+    // Stop USB
+    TinyUSBDevice.detach();
+    NRF_USBD->ENABLE = 0;
+        
     // Suspend the FreeRTOS scheduler to stop all tasks
     Serial.println("Suspending FreeRTOS scheduler");
     vTaskSuspendAll();
+    
+    // Disable SysTick (FreeRTOS tick interrupt) to prevent CPU wake
+    Serial.println("Disabling SysTick");
+    uint32_t prev_sysTickCtrl = SysTick->CTRL;
+    SysTick->CTRL = 0;
 
-    // Not sure about that
-    delay(1);
-
+    bool wasPwrOnPinHigh = digitalRead(PIN_PWR_ON);
+    bool wasPwrLedPinHigh = digitalRead(PIN_PWR_LED);
+    bool wasGyroPinHigh = digitalRead(PIN_GYRO_PWR);
+    bool wasBlueLedPinHigh = digitalRead(LED_BLUE);
+    digitalWrite(PIN_PWR_ON, LOW);
     digitalWrite(PIN_PWR_LED, LOW);
     digitalWrite(PIN_GYRO_PWR, LOW);
     digitalWrite(LED_BLUE, LOW);
-    delay(1);
-    digitalWrite(PIN_PWR_ON, LOW);
-    delay(1);
-    // NRF_POWER->TASKS_CONSTLAT = 1;
-    // delay(1);
-    NRF_POWER->TASKS_LOWPWR = 1;
-    
-    // Disable SysTick (FreeRTOS tick interrupt) to prevent CPU wake
-    SysTick->CTRL = 0;
     
     // Configure menu button for sense (wake on low)
     // This allows the button press to generate an event that wakes the CPU
+    Serial.println("Configuring GPIO sense on menu button");
+    uint32_t prev_buttonConfig = NRF_GPIO->PIN_CNF[PIN_MENU];
     NRF_GPIO->PIN_CNF[PIN_MENU] = (GPIO_PIN_CNF_SENSE_Low << GPIO_PIN_CNF_SENSE_Pos)
                                  | (GPIO_PIN_CNF_PULL_Pullup << GPIO_PIN_CNF_PULL_Pos)
                                  | (GPIO_PIN_CNF_INPUT_Connect << GPIO_PIN_CNF_INPUT_Pos)
                                  | (GPIO_PIN_CNF_DIR_Input << GPIO_PIN_CNF_DIR_Pos);
     
+    Serial.println("Entering low-power loop - press menu to reset");
+    Serial.flush();  // Ensure all serial data is sent before sleeping
+
     // Enter low-power loop
     while(true) {
         // Clear any pending events
@@ -249,15 +247,61 @@ void shutdownLoop() {
         // Check if menu button is pressed (active low)
         if(digitalRead(PIN_MENU) == LOW) {
             // Small busy-wait for debounce (can't use delay() as scheduler is suspended)
-            for(volatile int i = 0; i < 100000; i++);
+            for(volatile int i = 0; i < 10000000; i++)
+            {
+                __asm("nop");
+            }
             
             // Confirm button is still pressed
             if(digitalRead(PIN_MENU) == LOW) {
                 // Button confirmed - reset system
-                NVIC_SystemReset();
+                //NVIC_SystemReset();
+                break;
             }
         }
     }
+
+    // Wake up : do everything in reverse order
+
+    // Reconfigure the menu button
+    NRF_GPIO->PIN_CNF[PIN_MENU] = prev_buttonConfig;
+
+    // Enable hardware
+    digitalWrite(PIN_PWR_ON, wasPwrOnPinHigh);
+    digitalWrite(PIN_PWR_LED, wasPwrLedPinHigh);
+    digitalWrite(PIN_GYRO_PWR, wasGyroPinHigh);
+    digitalWrite(LED_BLUE, wasBlueLedPinHigh);
+
+    // Enable systick
+    SysTick->CTRL = prev_sysTickCtrl;
+    
+    // Suspend the FreeRTOS scheduler to stop all tasks
+    Serial.println("Resuming FreeRTOS scheduler");
+    xTaskResumeAll();
+
+    NRF_USBD->ENABLE = 1;
+    TinyUSBDevice.attach();
+    
+    // Start I2S if it was running
+    if(audioCallback != nullptr) {
+        Serial.println("Restart I2S");
+        NRF_I2S->ENABLE = 1;
+        NRF_I2S->TASKS_START = 1;
+    }
+    
+    Serial.println("Enable DWT");
+    dwt_enable();
+
+
+    Serial.println("Out of sleep mode");
+    
+    // Give feedback to the user
+    pixels.fill(0x00ff00);
+    pixels.show();
+    delay(500);
+    pixels.fill(0x0);
+    pixels.show();
+    Serial.println("Restart done");
 }
 
 

@@ -22,7 +22,7 @@ enum PIN {
     PIN_K4 			= PINID(0,8),
     PIN_K9 			= PINID(1,9),
 	PIN_I2C_SCL 	= PINID(0,11),
-    PIN_GYRO_PWR 	= PINID(0,12), // Unused
+    PIN_GYRO_PWR 	= PINID(0,12),
     PIN_PWR_ON 		= PINID(0,25),
     PIN_K6 			= PINID(0,24),
     PIN_K1 			= PINID(0,22),
