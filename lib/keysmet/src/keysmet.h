@@ -8,6 +8,7 @@ const float SAMPLE_RATE = 22727.27f;
 
 enum PIN {
     PIN_MENU		= PINID(1,10),
+    PIN_MENU_LED 	= PINID(0,28),
     PIN_BAT_LVL 	= PINID(0,29),
     PIN_USB_ST 		= PINID(0,31),
     PIN_CHG 		= PINID(0,30),
@@ -22,7 +23,6 @@ enum PIN {
     PIN_K4 			= PINID(0,8),
     PIN_K9 			= PINID(1,9),
 	PIN_I2C_SCL 	= PINID(0,11),
-    PIN_GYRO_PWR 	= PINID(0,12),
     PIN_PWR_ON 		= PINID(0,25),
     PIN_K6 			= PINID(0,24),
     PIN_K1 			= PINID(0,22),

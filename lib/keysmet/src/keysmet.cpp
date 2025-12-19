@@ -49,8 +49,8 @@ void setupPins() {
 
     pinMode(PIN_LED, OUTPUT);
     pinMode(PIN_PWR_LED, OUTPUT);
+    pinMode(PIN_MENU_LED, OUTPUT);
     pinMode(PIN_PWR_ON, OUTPUT_S0H1);
-    pinMode(PIN_GYRO_PWR, OUTPUT);
 
     pinMode(LED_BLUE, OUTPUT);
 
@@ -220,7 +220,7 @@ void shutdownLoop() {
     bool wasBlueLedPinHigh = digitalRead(LED_BLUE);
     digitalWrite(PIN_PWR_ON, LOW);
     digitalWrite(PIN_PWR_LED, LOW);
-    digitalWrite(PIN_GYRO_PWR, LOW);
+    digitalWrite(PIN_MENU_LED, LOW);
     digitalWrite(LED_BLUE, LOW);
     
     // Configure menu button for sense (wake on low)
@@ -369,7 +369,7 @@ double getTime() {
 void ksm_init() {
     setupPins();
     digitalWrite(PIN_PWR_ON, HIGH);
-    digitalWrite(PIN_GYRO_PWR, HIGH);
+    digitalWrite(PIN_MENU_LED, HIGH);
 
     delay(10);
 
