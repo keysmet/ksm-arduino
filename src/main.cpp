@@ -169,10 +169,10 @@ int keyDown = 0;
 void loop() {
 	ksm_loop();
 
-	// Wait for USB to be ready before sending reports
-	if (!TinyUSBDevice.mounted()) {
-		return;
-	}
+	// // Wait for USB to be ready before sending reports
+	// if (!TinyUSBDevice.mounted()) {
+	// 	return;
+	// }
 
 	int startKey = 0x1E;
 	int newKeyDown = 0;
@@ -186,6 +186,7 @@ void loop() {
 			setColor(i, 0x0);
 		}
 	}
+	// setColor(1, rand() % 0xFFFFFF);
 
 	if(newKeyDown != keyDown) {
 		keyDown = newKeyDown;

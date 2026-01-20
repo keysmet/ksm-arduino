@@ -51,7 +51,7 @@ void setupPins() {
     pinMode(PIN_PWR_LED, OUTPUT);
     pinMode(PIN_MENU_LED, OUTPUT);
     pinMode(PIN_PWR_ON, OUTPUT_S0H1);
-
+    
     pinMode(LED_BLUE, OUTPUT);
 
     // Set the reset pin to P0.18
@@ -214,10 +214,9 @@ void shutdownLoop() {
     uint32_t prev_sysTickCtrl = SysTick->CTRL;
     SysTick->CTRL = 0;
 
-    bool wasPwrOnPinHigh = digitalRead(PIN_PWR_ON);
-    bool wasPwrLedPinHigh = digitalRead(PIN_PWR_LED);
-    bool wasGyroPinHigh = digitalRead(PIN_GYRO_PWR);
-    bool wasBlueLedPinHigh = digitalRead(LED_BLUE);
+    // bool wasPwrOnPinHigh = digitalRead(PIN_PWR_ON);
+    // bool wasPwrLedPinHigh = digitalRead(PIN_PWR_LED);
+    // bool wasBlueLedPinHigh = digitalRead(LED_BLUE);
     digitalWrite(PIN_PWR_ON, LOW);
     digitalWrite(PIN_PWR_LED, LOW);
     digitalWrite(PIN_MENU_LED, LOW);
@@ -226,7 +225,7 @@ void shutdownLoop() {
     // Configure menu button for sense (wake on low)
     // This allows the button press to generate an event that wakes the CPU
     Serial.println("Configuring GPIO sense on menu button");
-    uint32_t prev_buttonConfig = NRF_GPIO->PIN_CNF[PIN_MENU];
+    //uint32_t prev_buttonConfig = NRF_GPIO->PIN_CNF[PIN_MENU];
     NRF_GPIO->PIN_CNF[PIN_MENU] = (GPIO_PIN_CNF_SENSE_Low << GPIO_PIN_CNF_SENSE_Pos)
                                  | (GPIO_PIN_CNF_PULL_Pullup << GPIO_PIN_CNF_PULL_Pos)
                                  | (GPIO_PIN_CNF_INPUT_Connect << GPIO_PIN_CNF_INPUT_Pos)
@@ -255,21 +254,20 @@ void shutdownLoop() {
             // Confirm button is still pressed
             if(digitalRead(PIN_MENU) == LOW) {
                 // Button confirmed - reset system
-                //NVIC_SystemReset();
+                NVIC_SystemReset();
                 break;
             }
         }
     }
 
     // Wake up : do everything in reverse order
-
+    /*
     // Reconfigure the menu button
     NRF_GPIO->PIN_CNF[PIN_MENU] = prev_buttonConfig;
 
     // Enable hardware
     digitalWrite(PIN_PWR_ON, wasPwrOnPinHigh);
     digitalWrite(PIN_PWR_LED, wasPwrLedPinHigh);
-    digitalWrite(PIN_GYRO_PWR, wasGyroPinHigh);
     digitalWrite(LED_BLUE, wasBlueLedPinHigh);
 
     // Enable systick
@@ -302,6 +300,7 @@ void shutdownLoop() {
     pixels.fill(0x0);
     pixels.show();
     Serial.println("Restart done");
+    */
 }
 
 
