@@ -1,5 +1,5 @@
 #include <Arduino.h>
-#include "keysmet.h"
+#include "ksm_board.h"
 #include <LSM6DS3.h>
 
 
@@ -154,9 +154,10 @@ void refreshUSBDescriptors()
 }
 
 void setup() {
-	ksm_init();
+	// Serial.begin(115200);
+	ksm::init();
 	initPhaseTable();
-	setupAudio(audioLoop);
+	ksm::setupAudio(audioLoop);
 	IMU.begin();
 	usbHID.begin();
 	ble::init();
@@ -167,7 +168,7 @@ void setup() {
 
 int keyDown = 0;
 void loop() {
-	ksm_loop();
+	ksm::loop();
 
 	// // Wait for USB to be ready before sending reports
 	// if (!TinyUSBDevice.mounted()) {
@@ -177,21 +178,26 @@ void loop() {
 	int startKey = 0x1E;
 	int newKeyDown = 0;
 	for(int i=1; i<=10; ++i) {
-		if(down(i)) {
-			newKeyDown = startKey + i - 1;
+		if(ksm::press(i)) {
+		// if(ksm::down(i)) {
+			// newKeyDown = startKey + i - 1;
 			// usbHID.keyboardPress(0, char('a' + i - 1));
-			setColor(i, 0x20FF00);
-		} else {
+			ksm::setColor(i, 0xFF0000);
+
+			Serial.printf("Battery level: %d\n", analogRead(PIN_BAT_LVL));
+		}
+
+		if(ksm::release(i)) {
 			// usbHID.keyboardRelease(0);
-			setColor(i, 0x0);
+			ksm::setColor(i, 0x0);
 		}
 	}
-	// setColor(1, rand() % 0xFFFFFF);
+	// ksm::setColor(1, rand() % 0xFFFFFF);
 
 	if(newKeyDown != keyDown) {
 		keyDown = newKeyDown;
 		uint8_t codes[6] = { (uint8_t)keyDown, 0, 0, 0, 0, 0 };
 		usbHID.keyboardReport(0, 0, codes);
-		bleHID.keyboardReport(0, codes);
+		//bleHID.keyboardReport(0, codes);
 	}
 }

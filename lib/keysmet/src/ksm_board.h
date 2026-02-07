@@ -48,17 +48,18 @@ enum KEY {
 	KEY_COUNT = 11,
 };
 
-void setColor(int key, int color);
-void setRGB(int key, float r, float g, float b);
-void setHSV(int key, float h, float s, float v);
-bool down(int key);
-bool press(int key);
-bool release(int key);
-bool hold(int key, int ms);
-void setRumble(bool on);
-long long getMicroTime();
-double getTime();
-void setupAudio(std::function<void(int16_t*, int)> callback);
-
-void ksm_init();
-void ksm_loop();
+namespace ksm {
+	void setColor(int key, int color);
+	void setRGB(int key, float r, float g, float b);
+	void setHSV(int key, float h, float s, float v);
+	bool down(int key);
+	bool press(int key);
+	bool release(int key);
+	bool hold(int key, int ms);
+	void setRumble(bool on);
+	long long getMicroTime();
+	double getTime();
+	void setupAudio(std::function<void(int16_t*, int)> callback);
+	void init();
+	void loop();
+}

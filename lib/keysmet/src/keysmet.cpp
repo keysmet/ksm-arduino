@@ -1,4 +1,4 @@
-#include "keysmet.h"
+#include "ksm_board.h"
 
 #include <Arduino.h>
 #include <Adafruit_NeoPixel.h>
@@ -68,9 +68,9 @@ void readKeys() {
     for(int i=0; i<KEY_COUNT; ++i) {
         keys[i].wasDown = keys[i].down;
         keys[i].down = digitalRead(KEY_PINS[i]) == LOW;
-        
+
         if(keys[i].down && !keys[i].wasDown) {
-            keys[i].pressTime = getMicroTime();
+            keys[i].pressTime = ksm::getMicroTime();
         }
     }
 }
@@ -81,32 +81,32 @@ int64_t lastMenuPressTime = 0;
 bool checkMenuStreakPress() {
     const int STREAK_COUNT = 3;
     const int MAX_INTERVAL_MS = 200;
-    
-    if(press(KEY_MENU)) {
-        int64_t currentTime = getMicroTime();
+
+    if(ksm::press(KEY_MENU)) {
+        int64_t currentTime = ksm::getMicroTime();
         int64_t elapsed = (menuPressCount > 0) ? (currentTime - lastMenuPressTime) / 1000 : 0;
-        
+
         if(menuPressCount > 0 && elapsed > MAX_INTERVAL_MS) {
             menuPressCount = 1;
         } else {
             menuPressCount++;
         }
-        
+
         lastMenuPressTime = currentTime;
-        
+
         if(menuPressCount >= STREAK_COUNT) {
             menuPressCount = 0;
             return true;
         }
     }
-    
+
     if(menuPressCount > 0) {
-        int64_t elapsed = (getMicroTime() - lastMenuPressTime) / 1000;
+        int64_t elapsed = (ksm::getMicroTime() - lastMenuPressTime) / 1000;
         if(elapsed > MAX_INTERVAL_MS) {
             menuPressCount = 0;
         }
     }
-    
+
     return false;
 }
 
@@ -180,7 +180,7 @@ void shutdownLoop() {
     
     // Wait for menu button to be released
     Serial.println("Waiting for button release...");
-    while(down(KEY_MENU)) {
+    while(ksm::down(KEY_MENU)) {
         delay(1);
         readKeys();
     }
@@ -306,6 +306,8 @@ void shutdownLoop() {
 
 } // end anonymous namespace
 
+namespace ksm {
+
 void setColor(int key, int color) {
 	// Key 0 (MENU) doesn't have a pixel, only keys 1-10 have pixels
 	if(key < 1 || key > 10) return;
@@ -365,7 +367,7 @@ double getTime() {
 }
 
 
-void ksm_init() {
+void init() {
     setupPins();
     digitalWrite(PIN_PWR_ON, HIGH);
     digitalWrite(PIN_MENU_LED, HIGH);
@@ -388,7 +390,7 @@ void ksm_init() {
 	}
 }
 
-void ksm_loop() {
+void loop() {
     if(flushPixels) {
 		for(int i=1; i<=10; ++i) {
 			int pixelIdx = PIX_INDICES[i-1];
@@ -416,3 +418,5 @@ void setupAudio(std::function<void(int16_t*, int)> callback) {
 	audioCallback = callback;
 	setupI2S();
 }
+
+} // namespace ksm

@@ -23,7 +23,7 @@
 #include "wiring_digital.h"
 #include "nrf.h"
 
-#include "../../lib/keysmet/src/keysmet.h"
+#include "../../lib/keysmet/src/ksm_board.h"
 
 const uint32_t g_ADigitalPinMap[] =
 {
