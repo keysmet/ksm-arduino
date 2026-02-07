@@ -372,8 +372,6 @@ void ksm_init() {
 
     delay(10);
 
-    Serial.begin(115200);
-
     NRF_NVMC->ICACHECNF = 1;
     dwt_enable();
     
