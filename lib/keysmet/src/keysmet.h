@@ -1,7 +1,6 @@
 #pragma once
 
 #include <functional>
-#include "keycodes.h"
 
 #define PINID(r, i) ((r) * 32 + (i))
 
@@ -49,23 +48,17 @@ enum KEY {
 	KEY_COUNT = 11,
 };
 
-namespace ksm {
-	void setColor(int key, int color);
-	void setRGB(int key, float r, float g, float b);
-	void setHSV(int key, float h, float s, float v);
-	bool down(int key);
-	bool press(int key);
-	bool release(int key);
-	bool hold(int key, int ms);
-	void setRumble(bool on);
-	long long getMicroTime();
-	double getTime();
-	void setupAudio(std::function<void(int16_t*, int)> callback);
-	void init();
-	void loop();
+void setColor(int key, int color);
+void setRGB(int key, float r, float g, float b);
+void setHSV(int key, float h, float s, float v);
+bool down(int key);
+bool press(int key);
+bool release(int key);
+bool hold(int key, int ms);
+void setRumble(bool on);
+long long getMicroTime();
+double getTime();
+void setupAudio(std::function<void(int16_t*, int)> callback);
 
-	// Keyboard HID API
-	void setKeyboard(int key, bool down);
-	void clearKeyboard();
-	void setKeyboardReportCallback(std::function<void(uint8_t modifiers, uint8_t* keys)> callback);
-}
+void ksm_init();
+void ksm_loop();

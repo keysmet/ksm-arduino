@@ -29,6 +29,24 @@ bool flushPixels = false;
 int64_t timeOffset = 0;
 uint32_t lastTime = 0;
 
+// Keyboard HID state
+const int MAX_KBD_KEYS = 6;
+uint8_t kbdKeys[MAX_KBD_KEYS] = {0};
+uint8_t kbdModifiers = 0;
+bool kbdDirty = false;
+std::function<void(uint8_t, uint8_t*)> keyboardReportCallback = nullptr;
+
+void setModifier(int mod, bool down) {
+	if(down)
+		kbdModifiers |= (1 << mod);
+	else
+		kbdModifiers &= ~(1 << mod);
+}
+
+bool hasModifier(int mod) {
+	return (kbdModifiers & (1 << mod)) != 0;
+}
+
 // Internal helper functions
 void setupPins() {
     pinMode(PIN_K1, INPUT_PULLUP);
@@ -399,9 +417,15 @@ void loop() {
 		pixels.show();
 		flushPixels = false;
 	}
-    
+
     delay(1);
     readKeys();
+
+	// Send keyboard report if state changed
+	if(kbdDirty && keyboardReportCallback != nullptr) {
+		kbdDirty = false;
+		keyboardReportCallback(kbdModifiers, kbdKeys);
+	}
 
     if(checkMenuStreakPress()) {
         Serial.println("Menu reset detected");
@@ -417,6 +441,51 @@ void loop() {
 void setupAudio(std::function<void(int16_t*, int)> callback) {
 	audioCallback = callback;
 	setupI2S();
+}
+
+void setKeyboard(int key, bool down) {
+	if(key & keycodes::CONSUMER_FLAG) {
+		// Consumer keys not implemented in lib yet
+		// Could be added later if needed
+		return;
+	}
+
+	if(key >= keycodes::CONTROL_LEFT) {
+		// Modifier key (Ctrl, Shift, Alt, GUI)
+		int mod = key - keycodes::CONTROL_LEFT;
+		setModifier(mod, down);
+	}
+	else {
+		// Regular key
+		if (down) {
+			// Add key to first available slot
+			for (int i = 0; i < MAX_KBD_KEYS; i++) {
+				if (kbdKeys[i] == key || kbdKeys[i] == 0) {
+					kbdKeys[i] = key;
+					break;
+				}
+			}
+		}
+		else {
+			// Remove key from array
+			for (int i = 0; i < MAX_KBD_KEYS; i++) {
+				if (kbdKeys[i] == key)
+					kbdKeys[i] = 0;
+			}
+		}
+	}
+	kbdDirty = true;
+}
+
+void clearKeyboard() {
+	kbdModifiers = 0;
+	for(int i = 0; i < MAX_KBD_KEYS; i++)
+		kbdKeys[i] = 0;
+	kbdDirty = true;
+}
+
+void setKeyboardReportCallback(std::function<void(uint8_t, uint8_t*)> callback) {
+	keyboardReportCallback = callback;
 }
 
 } // namespace ksm

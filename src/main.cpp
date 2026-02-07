@@ -163,6 +163,14 @@ void setup() {
 	ble::init();
 	ble::advertise(true);
 	refreshUSBDescriptors();
+
+
+	// TODO: this callback isn't great
+	// Should we handle usbHID internally entirely ?
+	ksm::setKeyboardReportCallback([](uint8_t modifiers, uint8_t* keys) {
+		usbHID.keyboardReport(0, modifiers, keys);
+		bleHID.keyboardReport(modifiers, keys);
+	});
 }
 
 
@@ -175,29 +183,38 @@ void loop() {
 	// 	return;
 	// }
 
-	int startKey = 0x1E;
-	int newKeyDown = 0;
+	auto kup = ksm::keycodes::ARROW_UP;
+	auto kdown = ksm::keycodes::ARROW_DOWN;
+	auto kleft = ksm::keycodes::ARROW_LEFT;
+	auto kright = ksm::keycodes::ARROW_RIGHT;
+	auto kenter = ksm::keycodes::ENTER;
+	auto kspace = ksm::keycodes::SPACE;
+	auto kalt = ksm::keycodes::ALT_LEFT;
+	auto ktab = ksm::keycodes::TAB;
+
+	int keyMapping[] = {
+		ktab,		kup,	0,		0,			0,
+		kleft,	kdown,	kright,	kspace,		kalt,
+	};
+
+	float hue1 = 0.2f;
+	float hue2 = 0.55f;
+	float hues[] = {
+		hue1, hue2, 0,0,0,
+		hue2, hue2, hue2, hue1, hue1,
+	};
+
 	for(int i=1; i<=10; ++i) {
-		if(ksm::press(i)) {
-		// if(ksm::down(i)) {
-			// newKeyDown = startKey + i - 1;
-			// usbHID.keyboardPress(0, char('a' + i - 1));
-			ksm::setColor(i, 0xFF0000);
-
-			Serial.printf("Battery level: %d\n", analogRead(PIN_BAT_LVL));
+		auto code = keyMapping[ i - 1 ];
+		if(code > 0) {
+			if(ksm::down(i))
+				ksm::setHSV(i, hues[i-1], 1.0f, 1.0f);
+			else 
+				ksm::setHSV(i, hues[i-1], 1.0f, 0.3f);
+			if(ksm::press(i))
+				ksm::setKeyboard(code, true);
+			if(ksm::release(i))
+				ksm::setKeyboard(code, false);
 		}
-
-		if(ksm::release(i)) {
-			// usbHID.keyboardRelease(0);
-			ksm::setColor(i, 0x0);
-		}
-	}
-	// ksm::setColor(1, rand() % 0xFFFFFF);
-
-	if(newKeyDown != keyDown) {
-		keyDown = newKeyDown;
-		uint8_t codes[6] = { (uint8_t)keyDown, 0, 0, 0, 0, 0 };
-		usbHID.keyboardReport(0, 0, codes);
-		//bleHID.keyboardReport(0, codes);
 	}
 }
