@@ -1,0 +1,59 @@
+# Keysmet ONE (nRF52840)
+# ----------------------
+
+ksm1.name=Keysmet ONE (nRF52840)
+
+# VID/PID for USB
+ksm1.vid.0=0x239A
+ksm1.pid.0=0x810B
+ksm1.vid.1=0x239A
+ksm1.pid.1=0x010B
+ksm1.vid.2=0x239A
+ksm1.pid.2=0x810C
+
+# Upload
+ksm1.bootloader.tool=adafruit:bootburn
+ksm1.upload.tool=adafruit:nrfutil
+ksm1.upload.protocol=nrfutil
+ksm1.upload.use_1200bps_touch=true
+ksm1.upload.wait_for_upload_port=true
+ksm1.upload.maximum_size=815104
+ksm1.upload.maximum_data_size=248832
+
+# Build
+ksm1.build.mcu=cortex-m4
+ksm1.build.f_cpu=64000000
+ksm1.build.board=NRF52840_KSM1
+ksm1.build.core=adafruit:nRF5
+ksm1.build.variant=ksm1
+ksm1.build.usb_manufacturer="Keysmet"
+ksm1.build.usb_product="Keysmet ONE"
+ksm1.build.extra_flags=-DNRF52840_XXAA {build.flags.usb}
+ksm1.build.ldscript=nrf52840_s140_v6.ld
+ksm1.build.vid=0x239A
+ksm1.build.pid=0x810B
+
+# SoftDevice Menu
+ksm1.menu.softdevice.s140v6=S140 6.1.1
+ksm1.menu.softdevice.s140v6.build.sd_name=s140
+ksm1.menu.softdevice.s140v6.build.sd_version=6.1.1
+ksm1.menu.softdevice.s140v6.build.sd_fwid=0x00B6
+
+# Debug Menu
+ksm1.menu.debug.l0=Level 0 (Release)
+ksm1.menu.debug.l0.build.debug_flags=-DCFG_DEBUG=0
+ksm1.menu.debug.l1=Level 1 (Error Message)
+ksm1.menu.debug.l1.build.debug_flags=-DCFG_DEBUG=1
+ksm1.menu.debug.l2=Level 2 (Full Debug)
+ksm1.menu.debug.l2.build.debug_flags=-DCFG_DEBUG=2
+ksm1.menu.debug.l3=Level 3 (Segger SystemView)
+ksm1.menu.debug.l3.build.debug_flags=-DCFG_DEBUG=3
+ksm1.menu.debug.l3.build.sysview_flags=-DCFG_SYSVIEW=1
+
+# Debug Output Menu
+ksm1.menu.debug_output.serial=Serial
+ksm1.menu.debug_output.serial.build.logger_flags=-DCFG_LOGGER=0
+ksm1.menu.debug_output.serial1=Serial1
+ksm1.menu.debug_output.serial1.build.logger_flags=-DCFG_LOGGER=1 -DCFG_TUSB_DEBUG=CFG_DEBUG
+ksm1.menu.debug_output.rtt=Segger RTT
+ksm1.menu.debug_output.rtt.build.logger_flags=-DCFG_LOGGER=2 -DCFG_TUSB_DEBUG=CFG_DEBUG -DSEGGER_RTT_MODE_DEFAULT=SEGGER_RTT_MODE_BLOCK_IF_FIFO_FULL

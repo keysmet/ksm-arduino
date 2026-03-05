@@ -1,5 +1,5 @@
 #include <Arduino.h>
-#include "ksm_board.h"
+#include "keysmet.h"
 #include <LSM6DS3.h>
 
 
@@ -111,7 +111,7 @@ namespace ble {
 } // ble
 
 const float FREQUENCY = 440.0f;
-const int PHASE_SIZE = int(SAMPLE_RATE / FREQUENCY + 0.5f);
+const int PHASE_SIZE = int(KSM_SAMPLE_RATE / FREQUENCY + 0.5f);
 int16_t phaseTable[PHASE_SIZE];
 
 void initPhaseTable() {
@@ -123,7 +123,7 @@ void initPhaseTable() {
 }
 
 float phaseIndex = 0.0f;
-const float phaseIncrement = float(PHASE_SIZE) * FREQUENCY / SAMPLE_RATE;
+const float phaseIncrement = float(PHASE_SIZE) * FREQUENCY / KSM_SAMPLE_RATE;
 
 void audioLoop(int16_t* ptr, int count) {
     for (int i = 0; i < count; ++i) {

@@ -1,0 +1,43 @@
+{
+  "packages": [
+    {
+      "name": "keysmet",
+      "maintainer": "Keysmet",
+      "websiteURL": "https://github.com/keysmet/ksm-arduino",
+      "email": "support@keysmet.com",
+      "help": {
+        "online": "https://github.com/keysmet/ksm-arduino/issues"
+      },
+      "platforms": [
+        {
+          "name": "Keysmet nRF52 Boards",
+          "architecture": "nrf52",
+          "version": "1.0.0",
+          "category": "Contributed",
+          "url": "https://github.com/keysmet/ksm-arduino/releases/download/v1.0.0/keysmet-nrf52-1.0.0.tar.bz2",
+          "archiveFileName": "keysmet-nrf52-1.0.0.tar.bz2",
+          "checksum": "SHA-256:0000000000000000000000000000000000000000000000000000000000000000",
+          "size": "0",
+          "boards": [
+            {
+              "name": "Keysmet ONE"
+            }
+          ],
+          "toolsDependencies": [
+            {
+              "packager": "adafruit",
+              "name": "arm-none-eabi-gcc",
+              "version": "9-2019q4"
+            },
+            {
+              "packager": "adafruit",
+              "name": "CMSIS",
+              "version": "5.7.0"
+            }
+          ]
+        }
+      ],
+      "tools": []
+    }
+  ]
+}
