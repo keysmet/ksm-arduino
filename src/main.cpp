@@ -204,6 +204,11 @@ void loop() {
 		hue2, hue2, hue2, hue1, hue1,
 	};
 
+	if(ksm::press(1)) {
+		int l = ksm::getBatLevel();
+		// Serial.println("Bat: %d", l);
+	}
+
  	for(int i=1; i<=10; ++i) {
 		auto code = keyMapping[ i - 1 ];
 		if(code > 0) {

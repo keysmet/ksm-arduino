@@ -20,6 +20,7 @@ namespace ksm {
 	void setupAudio(std::function<void(int16_t*, int)> callback);
 	void init();
 	void loop();
+    int getBatLevel();
 
 	// Keyboard HID API
 	void setKeyboard(int key, bool down);

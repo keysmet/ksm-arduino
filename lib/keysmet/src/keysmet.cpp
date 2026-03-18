@@ -47,6 +47,7 @@ bool hasModifier(int mod) {
 	return (kbdModifiers & (1 << mod)) != 0;
 }
 
+// STAGE: qu'est-ce qu'on pourrait bouger dans le variant.cpp
 // Internal helper functions
 void setupPins() {
     pinMode(PIN_K1, INPUT_PULLUP);
@@ -71,6 +72,8 @@ void setupPins() {
     pinMode(PIN_PWR_ON, OUTPUT_S0H1);
     
     pinMode(LED_BLUE, OUTPUT);
+
+    analogReadResolution(ADC_RESOLUTION);
 
     // Set the reset pin to P0.18
     if (((NRF_UICR->PSELRESET[0]) == 0xFFFFFFFF) && ((NRF_UICR->PSELRESET[1]) == 0xFFFFFFFF))
@@ -486,6 +489,19 @@ void clearKeyboard() {
 
 void setKeyboardReportCallback(std::function<void(uint8_t, uint8_t*)> callback) {
 	keyboardReportCallback = callback;
+}
+
+int getBatLevel() {
+    // Voltage divider: 100k (to bat) + 33k (to GND), ratio = 33/133
+    // ADC: 12-bit (0-4095), 3.3V reference
+    // LiPo: 3.0V = 0%, 4.2V = 100%
+    int raw = analogRead(PIN_BAT_LVL);
+    float vPin = raw * (3.3f / 4095.0f);
+    float vBat = vPin * (133.0f / 33.0f);
+    int level = (int)((vBat - 3.0f) / (4.2f - 3.0f) * 100.0f);
+    if (level < 0) level = 0;
+    if (level > 100) level = 100;
+    return level;
 }
 
 } // namespace ksm
