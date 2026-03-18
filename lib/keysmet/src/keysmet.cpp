@@ -70,6 +70,7 @@ void setupPins() {
     pinMode(PIN_PWR_LED, OUTPUT);
     pinMode(PIN_MENU_LED, OUTPUT);
     pinMode(PIN_PWR_ON, OUTPUT_S0H1);
+    pinMode(PIN_VIB, OUTPUT);
     
     pinMode(LED_BLUE, OUTPUT);
 
@@ -372,7 +373,7 @@ bool hold(int key, int ms) {
 }
 
 void setRumble(bool on) {
-	// TODO
+	digitalWrite(PIN_VIB, on ? HIGH : LOW);
 }
 
 int64_t getMicroTime() {

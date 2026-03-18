@@ -207,19 +207,33 @@ void loop() {
 	if(ksm::press(1)) {
 		int l = ksm::getBatLevel();
 		Serial.printf("Bat: %d\n", l);
+
+		int fcharge = analogRead(PIN_CHG);
+		int fusb = analogRead(PIN_USB_ST);
+		Serial.printf("charge: %d\n", fcharge);
+		Serial.printf("usb: %d\n", fusb);
 	}
 
- 	for(int i=1; i<=10; ++i) {
-		auto code = keyMapping[ i - 1 ];
-		if(code > 0) {
-			if(ksm::down(i))
-				ksm::setHSV(i, hues[i-1], 1.0f, 1.0f);
-			else 
-				ksm::setHSV(i, hues[i-1], 1.0f, 0.06f);
-			// if(ksm::press(i))
-			// 	ksm::setKeyboard(code, true);
-			// if(ksm::release(i))
-			// 	ksm::setKeyboard(code, false);
-		}
-	}
+	// int charge = digitalRead(PIN_CHG);
+	// int usb = digitalRead(PIN_USB_ST);
+
+	ksm::setColor(3, 1 ? 0x500000 : 0);
+
+	ksm::setRumble(ksm::down(2));
+	ksm::setColor(2, ksm::down(2) ? 0x500000 : 0);
+
+
+ 	// for(int i=1; i<=10; ++i) {
+	// 	auto code = keyMapping[ i - 1 ];
+	// 	if(code > 0) {
+	// 		if(ksm::down(i))
+	// 			ksm::setHSV(i, hues[i-1], 1.0f, 1.0f);
+	// 		else 
+	// 			ksm::setHSV(i, hues[i-1], 1.0f, 0.06f);
+	// 		// if(ksm::press(i))
+	// 		// 	ksm::setKeyboard(code, true);
+	// 		// if(ksm::release(i))
+	// 		// 	ksm::setKeyboard(code, false);
+	// 	}
+	// }
 }

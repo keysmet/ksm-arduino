@@ -59,9 +59,9 @@ extern "C"
 enum PIN {
     PIN_MENU        = PINID(1,10),
     PIN_MENU_LED    = PINID(0,28),
-    PIN_BAT_LVL     = PINID(0,29),
-    PIN_USB_ST      = PINID(0,31),
-    PIN_CHG         = PINID(0,30),
+    PIN_BAT_LVL     = PINID(0,30),
+    PIN_USB_ST      = PINID(0,29),
+    PIN_CHG         = PINID(0,31),
     PIN_K10         = PINID(0,27),
     PIN_LED         = PINID(0,0),
     PIN_I2S_LRCK    = PINID(0,1),
