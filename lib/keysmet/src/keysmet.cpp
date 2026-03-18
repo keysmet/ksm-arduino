@@ -77,7 +77,7 @@ void setupPins() {
     pinMode(LED_BLUE, OUTPUT);
 
     analogReadResolution(ADC_RESOLUTION);
-    analogReference(AR_INTERNAL);
+    analogReference(AR_INTERNAL_1_2);
 
     // Set the reset pin to P0.18
     if (((NRF_UICR->PSELRESET[0]) == 0xFFFFFFFF) && ((NRF_UICR->PSELRESET[1]) == 0xFFFFFFFF))
@@ -499,14 +499,15 @@ int getBatLevel() {
     int raw = analogRead(PIN_BAT_LVL);
     int adcRange = 1 << ADC_RESOLUTION;
     float fval = float(raw) / float(adcRange);
-    float vAdc = fval * 3.6f;  // AR_INTERNAL: 0.6V ref * 6 = 3.6V
-    float vBat = vAdc * (133.0f / 33.0f);
+    float gain = 1.2f; // See AR_INTERNAL_1_2
+    float vAdc = fval * gain;
+    float vBat = vAdc * (7.68f + 100.0f) / 7.68f;
     float batMin = 3.2f;
     float batMax = 4.2f;
-    int level = (int)((vBat - batMin) / (batMax - batMin) * 100.0f);
+    int level = (int)(100.0f * (vBat - batMin) / (batMax - batMin));
     Serial.printf("bat: raw=%d\n", raw);
-    Serial.printf("bat: fval=%.4f\n", fval);
     Serial.printf("bat: vAdc=%.3fV\n", vAdc);
+    Serial.printf("bat: fval=%.4f\n", fval);
     Serial.printf("bat: vBat=%.3fV\n", vBat);
     Serial.printf("bat: level=%d%%\n", level);
     return level;
