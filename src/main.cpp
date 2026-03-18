@@ -198,23 +198,23 @@ void loop() {
 	};
 
 	float hue1 = 0.2f;
-	float hue2 = 0.55f;
+	float hue2 = 0.83f;
 	float hues[] = {
 		hue1, hue2, 0,0,0,
 		hue2, hue2, hue2, hue1, hue1,
 	};
 
-	for(int i=1; i<=10; ++i) {
+ 	for(int i=1; i<=10; ++i) {
 		auto code = keyMapping[ i - 1 ];
 		if(code > 0) {
 			if(ksm::down(i))
 				ksm::setHSV(i, hues[i-1], 1.0f, 1.0f);
 			else 
-				ksm::setHSV(i, hues[i-1], 1.0f, 0.3f);
-			if(ksm::press(i))
-				ksm::setKeyboard(code, true);
-			if(ksm::release(i))
-				ksm::setKeyboard(code, false);
+				ksm::setHSV(i, hues[i-1], 1.0f, 0.06f);
+			// if(ksm::press(i))
+			// 	ksm::setKeyboard(code, true);
+			// if(ksm::release(i))
+			// 	ksm::setKeyboard(code, false);
 		}
 	}
 }
