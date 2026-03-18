@@ -209,15 +209,17 @@ void loop() {
 		// Serial.printf("Bat: %d\n", l);
 
 		// int vbat = analogRead(PIN_BAT_LVL);
-		// int vcharge = analogRead(PIN_CHG);
+		int vcharge = analogRead(PIN_CHG);
+		bool isCharging = digitalRead(PIN_CHG) == LOW;
+
 		// int vusb = analogRead(PIN_USB_ST);
 		// Serial.printf("bat: %d\n", vbat);
-		// Serial.printf("charge: %d\n", vcharge);
+		Serial.printf("charge: %i\n", isCharging);
 		// Serial.printf("usb: %d\n", vusb);
 	}
 
 	// int charge = digitalRead(PIN_CHG);
-	int usb = digitalRead(PIN_USB_ST);
+	// int usb = digitalRead(PIN_USB_ST);
 
 	// ksm::setColor(3, usb == HIGH ? 0x500000 : 0);
 
