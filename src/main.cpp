@@ -206,21 +206,27 @@ void loop() {
 
 	if(ksm::press(1)) {
 		int l = ksm::getBatLevel();
-		Serial.printf("Bat: %d\n", l);
+		// Serial.printf("Bat: %d\n", l);
 
-		int fcharge = analogRead(PIN_CHG);
-		int fusb = analogRead(PIN_USB_ST);
-		Serial.printf("charge: %d\n", fcharge);
-		Serial.printf("usb: %d\n", fusb);
+		// int vbat = analogRead(PIN_BAT_LVL);
+		// int vcharge = analogRead(PIN_CHG);
+		// int vusb = analogRead(PIN_USB_ST);
+		// Serial.printf("bat: %d\n", vbat);
+		// Serial.printf("charge: %d\n", vcharge);
+		// Serial.printf("usb: %d\n", vusb);
 	}
 
 	// int charge = digitalRead(PIN_CHG);
-	// int usb = digitalRead(PIN_USB_ST);
+	int usb = digitalRead(PIN_USB_ST);
 
-	ksm::setColor(3, 1 ? 0x500000 : 0);
+	// ksm::setColor(3, usb == HIGH ? 0x500000 : 0);
+
+	// for(int i=1; i<=10; ++i) {
+	// 	ksm::setColor(i, 0xffffff);
+	// }
 
 	ksm::setRumble(ksm::down(2));
-	ksm::setColor(2, ksm::down(2) ? 0x500000 : 0);
+	// ksm::setColor(2, ksm::down(2) ? 0x500000 : 0);
 
 
  	// for(int i=1; i<=10; ++i) {

@@ -63,7 +63,7 @@ void setupPins() {
     pinMode(PIN_MENU, INPUT_PULLUP);
 
     pinMode(PIN_BAT_LVL, INPUT);
-    pinMode(PIN_USB_ST, INPUT);
+    pinMode(PIN_USB_ST, INPUT_PULLUP);
     pinMode(PIN_CHG, INPUT);
 
     pinMode(PIN_LED, OUTPUT);
@@ -71,10 +71,13 @@ void setupPins() {
     pinMode(PIN_MENU_LED, OUTPUT);
     pinMode(PIN_PWR_ON, OUTPUT_S0H1);
     pinMode(PIN_VIB, OUTPUT);
+
+    digitalWrite(PIN_PWR_LED, HIGH);
     
     pinMode(LED_BLUE, OUTPUT);
 
     analogReadResolution(ADC_RESOLUTION);
+    analogReference(AR_INTERNAL);
 
     // Set the reset pin to P0.18
     if (((NRF_UICR->PSELRESET[0]) == 0xFFFFFFFF) && ((NRF_UICR->PSELRESET[1]) == 0xFFFFFFFF))
@@ -493,16 +496,19 @@ void setKeyboardReportCallback(std::function<void(uint8_t, uint8_t*)> callback) 
 }
 
 int getBatLevel() {
-    // Voltage divider: 100k (to bat) + 33k (to GND), ratio = 33/133
-    // ADC: 12-bit (0-4095), 3.3V reference
-    // LiPo: 3.0V = 0%, 4.2V = 100%
     int raw = analogRead(PIN_BAT_LVL);
-    Serial.printf("%d\n", raw);
-    float vPin = raw * (3.3f / 4095.0f);
-    float vBat = vPin * (133.0f / 33.0f);
-    int level = (int)((vBat - 3.0f) / (4.2f - 3.0f) * 100.0f);
-    if (level < 0) level = 0;
-    if (level > 100) level = 100;
+    int adcRange = 1 << ADC_RESOLUTION;
+    float fval = float(raw) / float(adcRange);
+    float vAdc = fval * 3.6f;  // AR_INTERNAL: 0.6V ref * 6 = 3.6V
+    float vBat = vAdc * (133.0f / 33.0f);
+    float batMin = 3.2f;
+    float batMax = 4.2f;
+    int level = (int)((vBat - batMin) / (batMax - batMin) * 100.0f);
+    Serial.printf("bat: raw=%d\n", raw);
+    Serial.printf("bat: fval=%.4f\n", fval);
+    Serial.printf("bat: vAdc=%.3fV\n", vAdc);
+    Serial.printf("bat: vBat=%.3fV\n", vBat);
+    Serial.printf("bat: level=%d%%\n", level);
     return level;
 }
 
