@@ -206,7 +206,7 @@ void loop() {
 
 	if(ksm::press(1)) {
 		int l = ksm::getBatLevel();
-		// Serial.println("Bat: %d", l);
+		Serial.printf("Bat: %d\n", l);
 	}
 
  	for(int i=1; i<=10; ++i) {

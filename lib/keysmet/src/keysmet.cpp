@@ -496,6 +496,7 @@ int getBatLevel() {
     // ADC: 12-bit (0-4095), 3.3V reference
     // LiPo: 3.0V = 0%, 4.2V = 100%
     int raw = analogRead(PIN_BAT_LVL);
+    Serial.printf("%d\n", raw);
     float vPin = raw * (3.3f / 4095.0f);
     float vBat = vPin * (133.0f / 33.0f);
     int level = (int)((vBat - 3.0f) / (4.2f - 3.0f) * 100.0f);
