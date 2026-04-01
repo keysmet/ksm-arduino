@@ -18,8 +18,8 @@ public:
     bool wasDown = false;
 };
 
-Adafruit_NeoPixel pixels(10, PIN_LED, NEO_GRB + NEO_KHZ800);
-int PIX_INDICES[] = { 9, 8, 7, 6, 5, 4, 3, 2, 1, 0 };
+Adafruit_NeoPixel pixels(11, PIN_LED, NEO_GRB + NEO_KHZ800);
+int PIX_INDICES[] = { 0, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1 };
 
 // State array for all keys
 KeyState keys[KEY_COUNT];
@@ -47,7 +47,6 @@ bool hasModifier(int mod) {
 	return (kbdModifiers & (1 << mod)) != 0;
 }
 
-// STAGE: qu'est-ce qu'on pourrait bouger dans le variant.cpp
 // Internal helper functions
 void setupPins() {
     pinMode(PIN_K1, INPUT_PULLUP);
@@ -68,7 +67,6 @@ void setupPins() {
 
     pinMode(PIN_LED, OUTPUT);
     pinMode(PIN_PWR_LED, OUTPUT);
-    pinMode(PIN_MENU_LED, OUTPUT);
     pinMode(PIN_PWR_ON, OUTPUT_S0H1);
     pinMode(PIN_VIB, OUTPUT);
 
@@ -244,7 +242,6 @@ void shutdownLoop() {
     // bool wasBlueLedPinHigh = digitalRead(LED_BLUE);
     digitalWrite(PIN_PWR_ON, LOW);
     digitalWrite(PIN_PWR_LED, LOW);
-    digitalWrite(PIN_MENU_LED, LOW);
     digitalWrite(LED_BLUE, LOW);
     
     // Configure menu button for sense (wake on low)
@@ -334,8 +331,7 @@ void shutdownLoop() {
 namespace ksm {
 
 void setColor(int key, int color) {
-	// Key 0 (MENU) doesn't have a pixel, only keys 1-10 have pixels
-	if(key < 1 || key > 10) return;
+	if(key < 0 || key >= KEY_COUNT) return;
 	keys[key].color = color;
 	flushPixels = true;
 }
@@ -395,7 +391,6 @@ double getTime() {
 void init() {
     setupPins();
     digitalWrite(PIN_PWR_ON, HIGH);
-    digitalWrite(PIN_MENU_LED, HIGH);
 
     delay(10);
 
@@ -417,9 +412,8 @@ void init() {
 
 void loop() {
     if(flushPixels) {
-		for(int i=1; i<=10; ++i) {
-			int pixelIdx = PIX_INDICES[i-1];
-			pixels.setPixelColor(pixelIdx, keys[i].color);
+		for(int i=0; i<KEY_COUNT; ++i) {
+			pixels.setPixelColor(PIX_INDICES[i], keys[i].color);
 		}
 		pixels.show();
 		flushPixels = false;

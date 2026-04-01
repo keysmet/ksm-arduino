@@ -157,7 +157,7 @@ void setup() {
 	// Serial.begin(115200);
 	ksm::init();
 	initPhaseTable();
-	ksm::setupAudio(audioLoop);
+	//ksm::setupAudio(audioLoop);
 	IMU.begin();
 	usbHID.begin();
 	ble::init();
@@ -217,6 +217,10 @@ void loop() {
 		Serial.printf("charge: %i\n", isCharging);
 		// Serial.printf("usb: %d\n", vusb);
 	}
+
+	ksm::setColor(1, 0x000050);
+	ksm::setColor(0, 0x505050);
+
 
 	// int charge = digitalRead(PIN_CHG);
 	// int usb = digitalRead(PIN_USB_ST);
