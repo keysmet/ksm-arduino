@@ -157,20 +157,20 @@ void setup() {
 	// Serial.begin(115200);
 	ksm::init();
 	initPhaseTable();
-	//ksm::setupAudio(audioLoop);
+	ksm::setupAudio(audioLoop);
 	IMU.begin();
-	usbHID.begin();
-	ble::init();
-	ble::advertise(true);
+	//usbHID.begin();
+	// ble::init();
+	// ble::advertise(true);
 	refreshUSBDescriptors();
 
 
 	// TODO: this callback isn't great
 	// Should we handle usbHID internally entirely ?
-	ksm::setKeyboardReportCallback([](uint8_t modifiers, uint8_t* keys) {
-		usbHID.keyboardReport(0, modifiers, keys);
-		bleHID.keyboardReport(modifiers, keys);
-	});
+	// ksm::setKeyboardReportCallback([](uint8_t modifiers, uint8_t* keys) {
+	// 	usbHID.keyboardReport(0, modifiers, keys);
+	// 	bleHID.keyboardReport(modifiers, keys);
+	// });
 }
 
 
@@ -206,7 +206,7 @@ void loop() {
 
 	if(ksm::press(1)) {
 		int l = ksm::getBatLevel();
-		// Serial.printf("Bat: %d\n", l);
+		Serial.printf("Bat: %d\n", l);
 
 		// int vbat = analogRead(PIN_BAT_LVL);
 		int vcharge = analogRead(PIN_CHG);
@@ -218,8 +218,8 @@ void loop() {
 		// Serial.printf("usb: %d\n", vusb);
 	}
 
-	ksm::setColor(1, 0x000050);
-	ksm::setColor(0, 0x505050);
+	// ksm::setColor(1, 0x000050);
+	ksm::setColor(0, 0x00FF00);
 
 
 	// int charge = digitalRead(PIN_CHG);
@@ -235,17 +235,8 @@ void loop() {
 	// ksm::setColor(2, ksm::down(2) ? 0x500000 : 0);
 
 
- 	// for(int i=1; i<=10; ++i) {
-	// 	auto code = keyMapping[ i - 1 ];
-	// 	if(code > 0) {
-	// 		if(ksm::down(i))
-	// 			ksm::setHSV(i, hues[i-1], 1.0f, 1.0f);
-	// 		else 
-	// 			ksm::setHSV(i, hues[i-1], 1.0f, 0.06f);
-	// 		// if(ksm::press(i))
-	// 		// 	ksm::setKeyboard(code, true);
-	// 		// if(ksm::release(i))
-	// 		// 	ksm::setKeyboard(code, false);
-	// 	}
-	// }
+ 	for(int i=1; i<=10; ++i) {
+		ksm::setHSV(i, i / 10.0f, 1.0f, ksm::down(i) ? 1.0f : 0.1f);
+
+	}
 }

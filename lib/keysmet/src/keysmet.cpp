@@ -85,6 +85,14 @@ void setupPins() {
         NRF_UICR->PSELRESET[1] = 18; // designate pin P0.18 as the RESET pin
         NRF_NVMC->CONFIG = 0;        // Put the UICR back into read-only mode.
     }
+
+    if ((NRF_UICR->REGOUT0 & 0x7) != 5) { // 5 = 3.3V, not already set
+        NRF_NVMC->CONFIG = 1;
+        NRF_UICR->REGOUT0 = (NRF_UICR->REGOUT0 & ~0x7UL) | 5;
+        NRF_NVMC->CONFIG = 0;
+        NVIC_SystemReset(); // change requires reset to take effect
+    }
+
 }
 
 void readKeys() {
