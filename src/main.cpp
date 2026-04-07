@@ -234,9 +234,9 @@ void loop() {
 	ksm::setRumble(ksm::down(2));
 	// ksm::setColor(2, ksm::down(2) ? 0x500000 : 0);
 
-
- 	for(int i=1; i<=10; ++i) {
-		ksm::setHSV(i, i / 10.0f, 1.0f, ksm::down(i) ? 1.0f : 0.1f);
-
+ 	for(int i=1; i<=10; ++i) {	
+		//ksm::setHSV(i, i / 10.0f, 1.0f, ksm::down(i) ? 1.0f : 0.1f);
+		ksm::setColor(i, 0x0000ff);
 	}
+
 }

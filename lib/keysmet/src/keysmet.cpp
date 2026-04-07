@@ -63,14 +63,14 @@ void setupPins() {
 
     pinMode(PIN_BAT_LVL, INPUT);
     pinMode(PIN_USB_ST, INPUT_PULLUP);
-    pinMode(PIN_CHG, INPUT);
+    pinMode(PIN_CHG, INPUT_PULLUP);
 
     pinMode(PIN_LED, OUTPUT);
     pinMode(PIN_PWR_LED, OUTPUT);
     pinMode(PIN_PWR_ON, OUTPUT_S0H1);
     pinMode(PIN_VIB, OUTPUT);
 
-    digitalWrite(PIN_PWR_LED, HIGH);
+    digitalWrite(PIN_PWR_LED, LOW);  // controlled dynamically in loop()
     
     pinMode(LED_BLUE, OUTPUT);
 
@@ -201,6 +201,11 @@ void setupI2S() {
 	xTaskCreate(audioTask, "audio", 256, NULL, TASK_PRIO_NORMAL, &audioTaskHandle);
 }
 
+// Light PWR_LED while the battery is charging (PIN_CHG is active low)
+void checkBattery() {
+    digitalWrite(PIN_PWR_LED, digitalRead(PIN_CHG) == LOW ? HIGH : LOW);
+}
+
 void shutdownLoop() {
     pixels.fill(0xff0000);
     pixels.show();
@@ -249,7 +254,6 @@ void shutdownLoop() {
     // bool wasPwrLedPinHigh = digitalRead(PIN_PWR_LED);
     // bool wasBlueLedPinHigh = digitalRead(LED_BLUE);
     digitalWrite(PIN_PWR_ON, LOW);
-    digitalWrite(PIN_PWR_LED, LOW);
     digitalWrite(LED_BLUE, LOW);
     
     // Configure menu button for sense (wake on low)
@@ -272,6 +276,8 @@ void shutdownLoop() {
         
         // Put CPU to sleep - will wake on button press event
         __WFE();
+        
+        checkBattery();
         
         // Check if menu button is pressed (active low)
         if(digitalRead(PIN_MENU) == LOW) {
@@ -426,6 +432,8 @@ void loop() {
 		pixels.show();
 		flushPixels = false;
 	}
+
+    checkBattery();
 
     delay(1);
     readKeys();
