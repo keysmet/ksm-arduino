@@ -110,8 +110,29 @@ namespace ble {
 
 } // ble
 
-const float FREQUENCY = 440.0f;
-const int PHASE_SIZE = int(KSM_SAMPLE_RATE / FREQUENCY + 0.5f);
+// C major scale over 2 octaves: C5 to C7 (15 notes)
+static const float SCALE_FREQS[] = {
+    523.25f,  // C5
+    587.33f,  // D5
+    659.25f,  // E5
+    698.46f,  // F5
+    783.99f,  // G5
+    880.00f,  // A5
+    987.77f,  // B5
+    1046.50f, // C6
+    1174.66f, // D6
+    1318.51f, // E6
+    1396.91f, // F6
+    1567.98f, // G6
+    1760.00f, // A6
+    1975.53f, // B6
+    2093.00f, // C7
+};
+static const int NOTE_COUNT = sizeof(SCALE_FREQS) / sizeof(SCALE_FREQS[0]);
+static const int NOTE_DURATION_SAMPLES = int(KSM_SAMPLE_RATE * 0.3f); // 300ms per note
+
+// Phase table sized for one full sine cycle at high resolution
+const int PHASE_SIZE = 1024;
 int16_t phaseTable[PHASE_SIZE];
 
 void initPhaseTable() {
@@ -123,25 +144,55 @@ void initPhaseTable() {
 }
 
 float phaseIndex = 0.0f;
-const float phaseIncrement = float(PHASE_SIZE) * FREQUENCY / KSM_SAMPLE_RATE;
+int currentNote = 0;
+int noteSampleCount = 0;
+int musicSelect = 0;
 
+static uint32_t t = 0;
 void audioLoop(int16_t* ptr, int count) {
     for (int i = 0; i < count; ++i) {
-        int idx = int(phaseIndex);
-        float frac = phaseIndex - idx;
-        int nextIdx = (idx + 1) % PHASE_SIZE;
-        
-        int16_t sample1 = phaseTable[idx];
-        int16_t sample2 = phaseTable[nextIdx];
-        int16_t iv = int16_t(sample1 + frac * (sample2 - sample1));
-        
-        *ptr++ = iv;
-        *ptr++ = iv;
-        
-        phaseIndex += phaseIncrement;
-        while(phaseIndex >= PHASE_SIZE) {
-            phaseIndex -= PHASE_SIZE;
+
+        // Downsample t to 8kHz regardless of your actual sample rate
+        // e.g. at 44100Hz: t increments ~every 5.5 samples
+        // Use a accumulator to get the right effective rate
+        static uint32_t acc = 0;
+        acc += 8000;
+        if (acc >= KSM_SAMPLE_RATE) {
+            acc -= KSM_SAMPLE_RATE;
+            t++;
         }
+
+
+        uint8_t s = 0;
+		switch(musicSelect) {
+			case 1: s = t*((t&4096?t%65536<59392?7:t>>6:16)+(1&t>>14))>>(3&-t>>(t&2048?2:10))|t>>(t&16384?t&4096?4:3:2);
+			break;
+        	case 2: s = t*(2&t>>13?7:5)*(3-(3&t>>9)+(3&t>>8))>>(3&-t>>(t&4096|(t>>11)%32>28?2:16))|t>>3;
+			break;
+			case 3: s = (~t>>2)*((127&t*(7&t>>10))<(245&t*(2+(5&t>>14))));
+			break;
+			// case 4: s = (t&4096?(t*(t^t%255)|t>>4)>>1:t>>3|(t&8192?t<<2:t))^((t&8192?t&4096?t&1024?2*t:4*t:t&512?4*t:4.2*t:(t&4096?t&1024?2*t:10*t:t&512?2*t:8*t)>>2)*(t&16384?3:2)|t*(t&16384?1/8:1/(.01*t))>>1);
+			// break;
+			case 5: s = t*(t>>(t&4096?t*t>>12:t>>12))|t<<(t>>8)|t>>4;
+			break;
+			case 6: s = t>>5|t>>4|(t%42*(t>>4)|357052691-(t>>4))/(t>>16)^(t|t>>4);
+			break;
+			case 7: s = t/((t>>3-(t>>14)%2)%(26>>(t>>16)%3))%1024/12<<9/(t>>5&127);
+			break;
+			case 8: s = (t>>10^t>>11)%5*((t>>14&3^t>>15&1)+1)*t%99+((3+(t>>14&3)-(t>>16&1))/3*t%99&64);
+			break;
+			case 9: s = ((t*(t>>12))<<(-t>>10&7))&-t>>2;
+			break;
+			case 10: s = (t%125&t>>8)|t>>4|t*t>>8&t>>8;
+			break;
+			default: break;
+		}
+
+        // Scale uint8 [0..255] to int16 [-32768..32767]
+        int16_t sample = ((int16_t)s - 128) << 8;
+
+        *ptr++ = sample;
+        *ptr++ = sample; // stereo
     }
 }
 
@@ -227,16 +278,15 @@ void loop() {
 
 	// ksm::setColor(3, usb == HIGH ? 0x500000 : 0);
 
-	// for(int i=1; i<=10; ++i) {
-	// 	ksm::setColor(i, 0xffffff);
-	// }
 
 	ksm::setRumble(ksm::down(2));
 	// ksm::setColor(2, ksm::down(2) ? 0x500000 : 0);
 
- 	for(int i=1; i<=10; ++i) {	
-		//ksm::setHSV(i, i / 10.0f, 1.0f, ksm::down(i) ? 1.0f : 0.1f);
-		ksm::setColor(i, 0x0000ff);
-	}
 
+ 	for(int i=1; i<=10; ++i) {
+		if(ksm::press(i)) {
+			musicSelect = i;
+		}
+		ksm::setHSV(i, i / 10.0f, 1.0f, ksm::down(i) ? 1.0f : 0.1f);
+	}
 }
