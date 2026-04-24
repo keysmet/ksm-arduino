@@ -2,6 +2,7 @@
 #include "keysmet.h"
 #include <LSM6DS3.h>
 
+#include <MIDI.h>
 
 #include <Adafruit_TinyUSB.h>
 uint8_t const desc_hid_report[] =
@@ -10,6 +11,10 @@ uint8_t const desc_hid_report[] =
 };
 Adafruit_USBD_HID usbHID(desc_hid_report, sizeof(desc_hid_report), HID_ITF_PROTOCOL_KEYBOARD, 2, false);
 
+
+// Adafruit_USBD_MIDI usb_midi;
+// MIDI_CREATE_INSTANCE(Adafruit_USBD_MIDI, usb_midi, MIDI);
+// BLEMIDI_CREATE_DEFAULT_INSTANCE()
 
 #include <bluefruit.h>
 BLEDis bledis; 	
@@ -48,6 +53,8 @@ namespace ble {
 		*/
 		bleHID.begin();
 
+		// blemidi.begin();
+
 		// Set callback for set LED from central
 		// bleHID.setKeyboardLedCallback(set_keyboard_led);
 
@@ -72,6 +79,7 @@ namespace ble {
 
 		// Include BLE HID service
 		Bluefruit.Advertising.addService(bleHID);
+		// Bluefruit.Advertising.addService(blemidi);
 		Bluefruit.Advertising.addService(dataService);
 
 		// There is enough room for the dev name in the advertising packet
@@ -210,10 +218,13 @@ void setup() {
 	initPhaseTable();
 	ksm::setupAudio(audioLoop);
 	IMU.begin();
-	//usbHID.begin();
-	// ble::init();
-	// ble::advertise(true);
+	// usbHID.begin();
+	// blemidi.begin();
+	ble::init();
+	ble::advertise(true);
 	refreshUSBDescriptors();
+
+	// MIDI.begin(MIDI_CHANNEL_OMNI);
 
 
 	// TODO: this callback isn't great
@@ -284,8 +295,12 @@ void loop() {
 
 
  	for(int i=1; i<=10; ++i) {
-		if(ksm::press(i)) {
+		 if(ksm::press(i)) {
+			// MIDI.sendNoteOn(i + 60, 100, 1);
 			musicSelect = i;
+		}
+		if(ksm::release(i)) {
+			// MIDI.sendNoteOff(i + 60, 0, 1);
 		}
 		ksm::setHSV(i, i / 10.0f, 1.0f, ksm::down(i) ? 1.0f : 0.1f);
 	}
