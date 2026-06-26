@@ -203,6 +203,18 @@ void setupI2S() {
 	xTaskCreate(audioTask, "audio", 256, NULL, TASK_PRIO_NORMAL, &audioTaskHandle);
 }
 
+static void enterSystemOff() {
+    digitalWrite(PIN_PWR_LED, LOW);
+    // PIN_MENU is P1.10 — NRF_GPIO is P0 only, must use NRF_P1
+    NRF_P1->PIN_CNF[10] = (GPIO_PIN_CNF_SENSE_Low << GPIO_PIN_CNF_SENSE_Pos)
+                         | (GPIO_PIN_CNF_PULL_Pullup << GPIO_PIN_CNF_PULL_Pos)
+                         | (GPIO_PIN_CNF_INPUT_Connect << GPIO_PIN_CNF_INPUT_Pos)
+                         | (GPIO_PIN_CNF_DIR_Input << GPIO_PIN_CNF_DIR_Pos);
+    NRF_POWER->SYSTEMOFF = 1;
+    __DSB();
+    while(true) {}
+}
+
 // Light PWR_LED while the battery is charging (PIN_CHG is active low)
 void checkBattery() {
     // digitalWrite(PIN_PWR_LED, digitalRead(PIN_CHG) == LOW ? HIGH : LOW);
@@ -214,7 +226,7 @@ void shutdownLoop() {
     digitalWrite(PIN_PWR_LED, HIGH);
     delay(500);
     pixels.fill(0x0);
-    digitalWrite(PIN_PWR_LED, LOW);
+    //digitalWrite(PIN_PWR_LED, LOW);
     pixels.show();
     Serial.println("Shutdown initiated");
     
@@ -287,11 +299,6 @@ void shutdownLoop() {
     // Configure menu button for sense (wake on low)
     // This allows the button press to generate an event that wakes the CPU
     Serial.println("Configuring GPIO sense on menu button");
-    //uint32_t prev_buttonConfig = NRF_GPIO->PIN_CNF[PIN_MENU];
-    NRF_GPIO->PIN_CNF[PIN_MENU] = (GPIO_PIN_CNF_SENSE_Low << GPIO_PIN_CNF_SENSE_Pos)
-                                 | (GPIO_PIN_CNF_PULL_Pullup << GPIO_PIN_CNF_PULL_Pos)
-                                 | (GPIO_PIN_CNF_INPUT_Connect << GPIO_PIN_CNF_INPUT_Pos)
-                                 | (GPIO_PIN_CNF_DIR_Input << GPIO_PIN_CNF_DIR_Pos);
     
     Serial.println("Entering low-power loop - press menu to reset");
     Serial.flush();  // Ensure all serial data is sent before sleeping
@@ -308,23 +315,9 @@ void shutdownLoop() {
         // Put CPU to sleep - will wake on button press event
         __WFE();
         
-        checkBattery();
+        // checkBattery();
         
-        // Check if menu button is pressed (active low)
-        if(digitalRead(PIN_MENU) == LOW) {
-            // Small busy-wait for debounce (can't use delay() as scheduler is suspended)
-            for(volatile int i = 0; i < 10000000; i++)
-            {
-                __asm("nop");
-            }
-            
-            // Confirm button is still pressed
-            if(digitalRead(PIN_MENU) == LOW) {
-                // Button confirmed - reset system
-                NVIC_SystemReset();
-                break;
-            }
-        }
+        enterSystemOff();
     }
 
     // Wake up : do everything in reverse order
@@ -434,6 +427,20 @@ double getTime() {
 
 
 void init() {
+    // On System OFF wake, require 1s hold before booting.
+    // Quick tap → back to System OFF immediately, before any hardware is touched.
+    if (readResetReason() & POWER_RESETREAS_OFF_Msk) {
+        pinMode(PIN_PWR_LED, OUTPUT);
+        digitalWrite(PIN_PWR_LED, HIGH);
+        pinMode(PIN_MENU, INPUT_PULLUP);
+        for (int i = 0; i < 1000; i++) {
+            delay(1);
+            if (digitalRead(PIN_MENU) == HIGH) {
+                enterSystemOff();
+            }
+        }
+    }
+
     setupPins();
     digitalWrite(PIN_PWR_ON, HIGH);
 
