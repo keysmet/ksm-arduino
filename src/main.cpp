@@ -156,6 +156,8 @@ int currentNote = 0;
 int noteSampleCount = 0;
 int musicSelect = 0;
 
+static const bool USE_C_SCALE = true;
+
 static uint32_t t = 0;
 void audioLoop(int16_t* ptr, int count) {
     for (int i = 0; i < count; ++i) {
@@ -171,7 +173,27 @@ void audioLoop(int16_t* ptr, int count) {
         }
 
 
-        uint8_t s = 0;
+        int16_t sample = 0;
+
+        if (USE_C_SCALE) {
+            float freq = SCALE_FREQS[currentNote];
+            float phaseInc = freq * float(PHASE_SIZE) / float(KSM_SAMPLE_RATE);
+            phaseIndex += phaseInc;
+            if (phaseIndex >= float(PHASE_SIZE))
+                phaseIndex -= float(PHASE_SIZE);
+            sample = phaseTable[int(phaseIndex)];
+
+            if (++noteSampleCount >= NOTE_DURATION_SAMPLES) {
+                noteSampleCount = 0;
+                currentNote = (currentNote + 1) % NOTE_COUNT;
+            }
+
+            *ptr++ = sample;
+            *ptr++ = sample;
+            continue;
+        }
+
+        uint8_t s = 128;
 		switch(musicSelect) {
 			case 1: s = t*((t&4096?t%65536<59392?7:t>>6:16)+(1&t>>14))>>(3&-t>>(t&2048?2:10))|t>>(t&16384?t&4096?4:3:2);
 			break;
@@ -197,7 +219,7 @@ void audioLoop(int16_t* ptr, int count) {
 		}
 
         // Scale uint8 [0..255] to int16 [-32768..32767]
-        int16_t sample = ((int16_t)s - 128) << 8;
+        sample = ((int16_t)s - 128) << 8;
 
         *ptr++ = sample;
         *ptr++ = sample; // stereo
@@ -213,6 +235,27 @@ void refreshUSBDescriptors()
 }
 
 void setup() {
+	// If waking from System OFF, require 1s hold to boot — same threshold as shutdown.
+	// // Anything shorter goes back to sleep without initializing hardware.
+	// if (NRF_POWER->RESETREAS & POWER_RESETREAS_OFF_Msk) {
+	// 	NRF_POWER->RESETREAS = 0xFFFFFFFF;
+	// 	pinMode(PIN_MENU, INPUT_PULLUP);
+	// 	bool held = (digitalRead(PIN_MENU) == LOW);
+	// 	for (int i = 0; i < 1000 && held; i++) {
+	// 		delay(1);
+	// 		held = (digitalRead(PIN_MENU) == LOW);
+	// 	}
+	// 	if (!held) {
+	// 		NRF_GPIO->PIN_CNF[PIN_MENU] = (GPIO_PIN_CNF_SENSE_Low << GPIO_PIN_CNF_SENSE_Pos)
+	// 									 | (GPIO_PIN_CNF_PULL_Pullup << GPIO_PIN_CNF_PULL_Pos)
+	// 									 | (GPIO_PIN_CNF_INPUT_Connect << GPIO_PIN_CNF_INPUT_Pos)
+	// 									 | (GPIO_PIN_CNF_DIR_Input << GPIO_PIN_CNF_DIR_Pos);
+	// 		NRF_POWER->SYSTEMOFF = 1;
+	// 		__DSB();
+	// 		while(true) {}
+	// 	}
+	// }
+
 	// Serial.begin(115200);
 	ksm::init();
 	initPhaseTable();

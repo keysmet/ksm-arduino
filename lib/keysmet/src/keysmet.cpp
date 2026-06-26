@@ -4,6 +4,8 @@
 #include <Adafruit_NeoPixel.h>
 #include <Wire.h>
 #include <LSM6DS3.h>
+#include <bluefruit.h>
+
 
 // Key pins array (must be outside anonymous namespace for external access if needed)
 static const PIN KEY_PINS[] = { 
@@ -237,7 +239,13 @@ void shutdownLoop() {
         readKeys();
     }
     Serial.println("Button released");
-    
+
+    NRF_POWER->GPREGRET = 0x58; // shutdown reset — caught in init() before anything starts
+    NVIC_SystemReset();
+   
+    #if 0
+    Bluefruit.end();
+
     Serial.println("Disabling DWT");
     dwt_disable();
     
@@ -304,21 +312,8 @@ void shutdownLoop() {
     Serial.flush();  // Ensure all serial data is sent before sleeping
 
 
-    digitalWrite(PIN_PWR_LED, LOW);
-
-    // Enter low-power loop
-    while(true) {
-        // Clear any pending events
-        __SEV();
-        __WFE();
-        
-        // Put CPU to sleep - will wake on button press event
-        __WFE();
-        
-        // checkBattery();
-        
-        enterSystemOff();
-    }
+    NRF_POWER->GPREGRET = 0x58; // shutdown reset — caught in init() before anything starts
+    NVIC_SystemReset();
 
     // Wake up : do everything in reverse order
     /*
@@ -361,6 +356,7 @@ void shutdownLoop() {
     pixels.show();
     Serial.println("Restart done");
     */
+   #endif
 }
 
 
@@ -427,6 +423,11 @@ double getTime() {
 
 
 void init() {
+    if (NRF_POWER->GPREGRET == 0x58) {
+        NRF_POWER->GPREGRET = 0;
+        enterSystemOff();
+    }
+
     // On System OFF wake, require 1s hold before booting.
     // Quick tap → back to System OFF immediately, before any hardware is touched.
     if (readResetReason() & POWER_RESETREAS_OFF_Msk) {
@@ -482,10 +483,10 @@ void loop() {
 		keyboardReportCallback(kbdModifiers, kbdKeys);
 	}
 
-    if(checkMenuStreakPress()) {
-        Serial.println("Menu reset detected");
-        resetBootloader();
-    }
+    // if(checkMenuStreakPress()) {
+    //     Serial.println("Menu reset detected");
+    //     resetBootloader();
+    // }
 
     if(hold(0, 1000)) {
         shutdownLoop();
