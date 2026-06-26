@@ -2,6 +2,8 @@
 
 #include <Arduino.h>
 #include <Adafruit_NeoPixel.h>
+#include <Wire.h>
+#include <LSM6DS3.h>
 
 // Key pins array (must be outside anonymous namespace for external access if needed)
 static const PIN KEY_PINS[] = { 
@@ -203,14 +205,16 @@ void setupI2S() {
 
 // Light PWR_LED while the battery is charging (PIN_CHG is active low)
 void checkBattery() {
-    digitalWrite(PIN_PWR_LED, digitalRead(PIN_CHG) == LOW ? HIGH : LOW);
+    // digitalWrite(PIN_PWR_LED, digitalRead(PIN_CHG) == LOW ? HIGH : LOW);
 }
 
 void shutdownLoop() {
     pixels.fill(0xff0000);
     pixels.show();
+    digitalWrite(PIN_PWR_LED, HIGH);
     delay(500);
     pixels.fill(0x0);
+    digitalWrite(PIN_PWR_LED, LOW);
     pixels.show();
     Serial.println("Shutdown initiated");
     
@@ -235,6 +239,30 @@ void shutdownLoop() {
         Serial.println("Stopping I2S");
         NRF_I2S->TASKS_STOP = 1;
         NRF_I2S->ENABLE = 0;
+    }
+
+    // Drive every signal pin that lands on a VPWR/VCC-powered chip (DAC, AMP,
+    // GYRO) low before cutting VPWR. While powered off the nRF stays alive in
+    // the wake loop below; any of these pins left high back-powers the "off"
+    // chip through its input ESD diodes, holding its rail (and VPWR) at ~0.6V
+    // and making the amp produce noise. A pin at 0V can't forward-bias anything.
+    // Shut down I2C properly: peripheral must be disabled before GPIO can
+    // take back the pins, otherwise TWI keeps SCL high through its pull-up.
+    IMU.end();
+    Wire.end();
+    NRF_TWIM0->TASKS_STOP = 1;
+    // while (!NRF_TWIM0->EVENTS_STOPPED);
+    NRF_TWIM0->ENABLE = 0;
+
+    const uint32_t backfeedPins[] = {
+        PIN_I2C_SDA, PIN_I2C_SCL,                // I2C pull-ups -> GYRO/VCC
+        PIN_I2S_BCK, PIN_I2S_LRCK, PIN_I2S_DIN,  // I2S -> DAC
+        PIN_VIB,                                 // motor drive
+        PIN_LED,                    // SK6812 string / PWR LED on VPWR
+    };
+    for (uint32_t pin : backfeedPins) {
+        pinMode(pin, OUTPUT);
+        digitalWrite(pin, LOW);
     }
 
     // Stop USB
@@ -267,6 +295,9 @@ void shutdownLoop() {
     
     Serial.println("Entering low-power loop - press menu to reset");
     Serial.flush();  // Ensure all serial data is sent before sleeping
+
+
+    digitalWrite(PIN_PWR_LED, LOW);
 
     // Enter low-power loop
     while(true) {
