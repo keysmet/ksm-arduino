@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include "keysmet.h"
+#include "sfxr.h"
 #include <LSM6DS3.h>
 
 #include <MIDI.h>
@@ -156,10 +157,47 @@ int currentNote = 0;
 int noteSampleCount = 0;
 int musicSelect = 0;
 
-static const bool USE_C_SCALE = true;
+// SFXR sound effect triggered on button 1 press.
+static const sfxr_params sfxBlip = {
+    /* wave_type       */ 1,
+    /* p_env_attack    */ 0.0f,
+    /* p_env_sustain   */ 0.08310601907199754f,
+    /* p_env_punch     */ 0.32172773912245023f,
+    /* p_env_decay     */ 0.30969441920201457f,
+    /* p_base_freq     */ 0.4493456434163772f,
+    /* p_freq_limit    */ 0.0f,
+    /* p_freq_ramp     */ 0.0f,
+    /* p_freq_dramp    */ 0.0f,
+    /* p_vib_strength  */ 0.0f,
+    /* p_vib_speed     */ 0.0f,
+    /* p_arp_mod       */ 0.28557554372743427f,
+    /* p_arp_speed     */ 0.5789224258815204f,
+    /* p_duty          */ 0.0f,
+    /* p_duty_ramp     */ 0.0f,
+    /* p_repeat_speed  */ 0.0f,
+    /* p_pha_offset    */ 0.0f,
+    /* p_pha_ramp      */ 0.0f,
+    /* p_lpf_freq      */ 1.0f,
+    /* p_lpf_ramp      */ 0.0f,
+    /* p_lpf_resonance */ 0.0f,
+    /* p_hpf_freq      */ 0.0f,
+    /* p_hpf_ramp      */ 0.0f,
+    /* sound_vol       */ 1.0f,
+};
+
+static sfxr_state sfx;
+static volatile bool sfxTrigger = false;
+
+static const bool USE_C_SCALE = false;
 
 static uint32_t t = 0;
 void audioLoop(int16_t* ptr, int count) {
+    // Pick up a pending trigger from the main loop and (re)start the effect.
+    if (sfxTrigger) {
+        sfxTrigger = false;
+        sfxr_reset(&sfx, &sfxBlip);
+    }
+
     for (int i = 0; i < count; ++i) {
 
         // Downsample t to 8kHz regardless of your actual sample rate
@@ -174,6 +212,17 @@ void audioLoop(int16_t* ptr, int count) {
 
 
         int16_t sample = 0;
+
+        // SFXR effect takes priority over the background synth while playing.
+        if (sfxr_playing(&sfx)) {
+            float f;
+            sfxr_generate(&sfx, &f, 1);
+            sample = (int16_t)(f * 32000.0f);
+            
+        }
+		*ptr++ = sample;
+        *ptr++ = sample;
+		continue;
 
         if (USE_C_SCALE) {
             float freq = SCALE_FREQS[currentNote];
@@ -310,6 +359,8 @@ void loop() {
 	};
 
 	if(ksm::press(1)) {
+		sfxTrigger = true;
+
 		int l = ksm::getBatLevel();
 		Serial.printf("Bat: %d\n", l);
 
