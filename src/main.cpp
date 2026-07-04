@@ -185,17 +185,293 @@ static const sfxr_params sfxBlip = {
     /* sound_vol       */ 1.0f,
 };
 
+// --- Additional SFXR sound effects -----------------------------------------
+// Field order matches sfxr_params (see sfxr.h). wave_type: 0 square,
+// 1 sawtooth, 2 sine, 3 noise. Values follow the standard sfxr [-1,1]/[0,1]
+// ranges. sound_vol is the master gain (1.0 drives the sustained body to full
+// scale; see SFXR_POST_GAIN in sfxr.h).
+
+// "coin"/pickup: bright square blip with an upward arpeggio flick.
+static const sfxr_params sfxCoin = {
+    /* wave_type       */ 0,
+    /* p_env_attack    */ 0.0f,
+    /* p_env_sustain   */ 0.08f,
+    /* p_env_punch     */ 0.45f,
+    /* p_env_decay     */ 0.40f,
+    /* p_base_freq     */ 0.55f,
+    /* p_freq_limit    */ 0.0f,
+    /* p_freq_ramp     */ 0.0f,
+    /* p_freq_dramp    */ 0.0f,
+    /* p_vib_strength  */ 0.0f,
+    /* p_vib_speed     */ 0.0f,
+    /* p_arp_mod       */ 0.55f,
+    /* p_arp_speed     */ 0.55f,
+    /* p_duty          */ 0.35f,
+    /* p_duty_ramp     */ 0.0f,
+    /* p_repeat_speed  */ 0.0f,
+    /* p_pha_offset    */ 0.0f,
+    /* p_pha_ramp      */ 0.0f,
+    /* p_lpf_freq      */ 1.0f,
+    /* p_lpf_ramp      */ 0.0f,
+    /* p_lpf_resonance */ 0.0f,
+    /* p_hpf_freq      */ 0.0f,
+    /* p_hpf_ramp      */ 0.0f,
+    /* sound_vol       */ 1.0f,
+};
+
+// "jump": short square tone that ramps up in pitch.
+static const sfxr_params sfxJump = {
+    /* wave_type       */ 0,
+    /* p_env_attack    */ 0.0f,
+    /* p_env_sustain   */ 0.15f,
+    /* p_env_punch     */ 0.35f,
+    /* p_env_decay     */ 0.28f,
+    /* p_base_freq     */ 0.35f,
+    /* p_freq_limit    */ 0.0f,
+    /* p_freq_ramp     */ 0.28f,
+    /* p_freq_dramp    */ 0.0f,
+    /* p_vib_strength  */ 0.0f,
+    /* p_vib_speed     */ 0.0f,
+    /* p_arp_mod       */ 0.0f,
+    /* p_arp_speed     */ 0.0f,
+    /* p_duty          */ 0.50f,
+    /* p_duty_ramp     */ 0.0f,
+    /* p_repeat_speed  */ 0.0f,
+    /* p_pha_offset    */ 0.0f,
+    /* p_pha_ramp      */ 0.0f,
+    /* p_lpf_freq      */ 1.0f,
+    /* p_lpf_ramp      */ 0.0f,
+    /* p_lpf_resonance */ 0.0f,
+    /* p_hpf_freq      */ 0.0f,
+    /* p_hpf_ramp      */ 0.0f,
+    /* sound_vol       */ 1.0f,
+};
+
+// "hurt": noisy downward-sliding hit.
+static const sfxr_params sfxHurt = {
+    /* wave_type       */ 3,
+    /* p_env_attack    */ 0.0f,
+    /* p_env_sustain   */ 0.10f,
+    /* p_env_punch     */ 0.30f,
+    /* p_env_decay     */ 0.25f,
+    /* p_base_freq     */ 0.35f,
+    /* p_freq_limit    */ 0.0f,
+    /* p_freq_ramp     */ -0.35f,
+    /* p_freq_dramp    */ 0.0f,
+    /* p_vib_strength  */ 0.0f,
+    /* p_vib_speed     */ 0.0f,
+    /* p_arp_mod       */ 0.0f,
+    /* p_arp_speed     */ 0.0f,
+    /* p_duty          */ 0.50f,
+    /* p_duty_ramp     */ 0.0f,
+    /* p_repeat_speed  */ 0.0f,
+    /* p_pha_offset    */ 0.0f,
+    /* p_pha_ramp      */ 0.0f,
+    /* p_lpf_freq      */ 1.0f,
+    /* p_lpf_ramp      */ 0.0f,
+    /* p_lpf_resonance */ 0.0f,
+    /* p_hpf_freq      */ 0.10f,
+    /* p_hpf_ramp      */ 0.0f,
+    /* sound_vol       */ 1.0f,
+};
+
+// "shoot"/laser: sawtooth zap sliding down in pitch.
+static const sfxr_params sfxShoot = {
+    /* wave_type       */ 1,
+    /* p_env_attack    */ 0.0f,
+    /* p_env_sustain   */ 0.12f,
+    /* p_env_punch     */ 0.40f,
+    /* p_env_decay     */ 0.20f,
+    /* p_base_freq     */ 0.50f,
+    /* p_freq_limit    */ 0.0f,
+    /* p_freq_ramp     */ -0.30f,
+    /* p_freq_dramp    */ 0.0f,
+    /* p_vib_strength  */ 0.0f,
+    /* p_vib_speed     */ 0.0f,
+    /* p_arp_mod       */ 0.0f,
+    /* p_arp_speed     */ 0.0f,
+    /* p_duty          */ 0.50f,
+    /* p_duty_ramp     */ 0.0f,
+    /* p_repeat_speed  */ 0.0f,
+    /* p_pha_offset    */ 0.0f,
+    /* p_pha_ramp      */ 0.0f,
+    /* p_lpf_freq      */ 1.0f,
+    /* p_lpf_ramp      */ 0.0f,
+    /* p_lpf_resonance */ 0.0f,
+    /* p_hpf_freq      */ 0.0f,
+    /* p_hpf_ramp      */ 0.0f,
+    /* sound_vol       */ 1.0f,
+};
+
+// "select": short sine chirp sliding up — soft UI confirm.
+static const sfxr_params sfxSelect = {
+    /* wave_type       */ 2,
+    /* p_env_attack    */ 0.0f,
+    /* p_env_sustain   */ 0.06f,
+    /* p_env_punch     */ 0.10f,
+    /* p_env_decay     */ 0.12f,
+    /* p_base_freq     */ 0.45f,
+    /* p_freq_limit    */ 0.0f,
+    /* p_freq_ramp     */ 0.15f,
+    /* p_freq_dramp    */ 0.0f,
+    /* p_vib_strength  */ 0.0f,
+    /* p_vib_speed     */ 0.0f,
+    /* p_arp_mod       */ 0.0f,
+    /* p_arp_speed     */ 0.0f,
+    /* p_duty          */ 0.50f,
+    /* p_duty_ramp     */ 0.0f,
+    /* p_repeat_speed  */ 0.0f,
+    /* p_pha_offset    */ 0.0f,
+    /* p_pha_ramp      */ 0.0f,
+    /* p_lpf_freq      */ 1.0f,
+    /* p_lpf_ramp      */ 0.0f,
+    /* p_lpf_resonance */ 0.0f,
+    /* p_hpf_freq      */ 0.0f,
+    /* p_hpf_ramp      */ 0.0f,
+    /* sound_vol       */ 1.0f,
+};
+
+// "error": harsh sawtooth with a downward arpeggio step — negative feedback.
+static const sfxr_params sfxError = {
+    /* wave_type       */ 1,
+    /* p_env_attack    */ 0.0f,
+    /* p_env_sustain   */ 0.20f,
+    /* p_env_punch     */ 0.10f,
+    /* p_env_decay     */ 0.30f,
+    /* p_base_freq     */ 0.28f,
+    /* p_freq_limit    */ 0.0f,
+    /* p_freq_ramp     */ -0.10f,
+    /* p_freq_dramp    */ 0.0f,
+    /* p_vib_strength  */ 0.0f,
+    /* p_vib_speed     */ 0.0f,
+    /* p_arp_mod       */ -0.25f,
+    /* p_arp_speed     */ 0.65f,
+    /* p_duty          */ 0.50f,
+    /* p_duty_ramp     */ 0.0f,
+    /* p_repeat_speed  */ 0.0f,
+    /* p_pha_offset    */ 0.0f,
+    /* p_pha_ramp      */ 0.0f,
+    /* p_lpf_freq      */ 1.0f,
+    /* p_lpf_ramp      */ 0.0f,
+    /* p_lpf_resonance */ 0.0f,
+    /* p_hpf_freq      */ 0.0f,
+    /* p_hpf_ramp      */ 0.0f,
+    /* sound_vol       */ 1.0f,
+};
+
+// "alarm": sustained square tone that stutters via repeat — warning beeper.
+static const sfxr_params sfxAlarm = {
+    /* wave_type       */ 0,
+    /* p_env_attack    */ 0.0f,
+    /* p_env_sustain   */ 0.60f,
+    /* p_env_punch     */ 0.0f,
+    /* p_env_decay     */ 0.15f,
+    /* p_base_freq     */ 0.40f,
+    /* p_freq_limit    */ 0.0f,
+    /* p_freq_ramp     */ 0.0f,
+    /* p_freq_dramp    */ 0.0f,
+    /* p_vib_strength  */ 0.0f,
+    /* p_vib_speed     */ 0.0f,
+    /* p_arp_mod       */ 0.0f,
+    /* p_arp_speed     */ 0.0f,
+    /* p_duty          */ 0.50f,
+    /* p_duty_ramp     */ 0.0f,
+    /* p_repeat_speed  */ 0.55f,
+    /* p_pha_offset    */ 0.0f,
+    /* p_pha_ramp      */ 0.0f,
+    /* p_lpf_freq      */ 1.0f,
+    /* p_lpf_ramp      */ 0.0f,
+    /* p_lpf_resonance */ 0.0f,
+    /* p_hpf_freq      */ 0.0f,
+    /* p_hpf_ramp      */ 0.0f,
+    /* sound_vol       */ 1.0f,
+};
+
+// "thruster": low, filtered noise rumble with slow vibrato — engine loop-ish.
+static const sfxr_params sfxThruster = {
+    /* wave_type       */ 3,
+    /* p_env_attack    */ 0.10f,
+    /* p_env_sustain   */ 0.50f,
+    /* p_env_punch     */ 0.0f,
+    /* p_env_decay     */ 0.25f,
+    /* p_base_freq     */ 0.18f,
+    /* p_freq_limit    */ 0.0f,
+    /* p_freq_ramp     */ 0.0f,
+    /* p_freq_dramp    */ 0.0f,
+    /* p_vib_strength  */ 0.15f,
+    /* p_vib_speed     */ 0.40f,
+    /* p_arp_mod       */ 0.0f,
+    /* p_arp_speed     */ 0.0f,
+    /* p_duty          */ 0.50f,
+    /* p_duty_ramp     */ 0.0f,
+    /* p_repeat_speed  */ 0.0f,
+    /* p_pha_offset    */ 0.0f,
+    /* p_pha_ramp      */ 0.0f,
+    /* p_lpf_freq      */ 0.45f,
+    /* p_lpf_ramp      */ 0.0f,
+    /* p_lpf_resonance */ 0.20f,
+    /* p_hpf_freq      */ 0.0f,
+    /* p_hpf_ramp      */ 0.0f,
+    /* sound_vol       */ 1.0f,
+};
+
+// "powerup": rising sine sweep with vibrato — collectible / level-up.
+static const sfxr_params sfxPowerup = {
+    /* wave_type       */ 2,
+    /* p_env_attack    */ 0.0f,
+    /* p_env_sustain   */ 0.30f,
+    /* p_env_punch     */ 0.0f,
+    /* p_env_decay     */ 0.40f,
+    /* p_base_freq     */ 0.25f,
+    /* p_freq_limit    */ 0.0f,
+    /* p_freq_ramp     */ 0.22f,
+    /* p_freq_dramp    */ 0.0f,
+    /* p_vib_strength  */ 0.35f,
+    /* p_vib_speed     */ 0.45f,
+    /* p_arp_mod       */ 0.0f,
+    /* p_arp_speed     */ 0.0f,
+    /* p_duty          */ 0.50f,
+    /* p_duty_ramp     */ 0.0f,
+    /* p_repeat_speed  */ 0.0f,
+    /* p_pha_offset    */ 0.0f,
+    /* p_pha_ramp      */ 0.0f,
+    /* p_lpf_freq      */ 1.0f,
+    /* p_lpf_ramp      */ 0.0f,
+    /* p_lpf_resonance */ 0.0f,
+    /* p_hpf_freq      */ 0.0f,
+    /* p_hpf_ramp      */ 0.0f,
+    /* sound_vol       */ 1.0f,
+};
+
+// Table of all effects (indexable / cyclable from the main loop).
+static const sfxr_params *const sfxTable[] = {
+    &sfxBlip,
+    &sfxCoin,
+    &sfxJump,
+    &sfxHurt,
+    &sfxShoot,
+    &sfxSelect,
+    &sfxError,
+    &sfxAlarm,
+    &sfxThruster,
+    &sfxPowerup,
+};
+static const int sfxCount = sizeof(sfxTable) / sizeof(sfxTable[0]);
+
 static sfxr_state sfx;
-static volatile bool sfxTrigger = false;
+// Index into sfxTable[] to (re)start on the audio thread, or -1 for none.
+// Set from the main loop when a key is pressed; consumed in audioLoop().
+static volatile int sfxTrigger = -1;
 
 static const bool USE_C_SCALE = false;
 
 static uint32_t t = 0;
 void audioLoop(int16_t* ptr, int count) {
     // Pick up a pending trigger from the main loop and (re)start the effect.
-    if (sfxTrigger) {
-        sfxTrigger = false;
-        sfxr_reset(&sfx, &sfxBlip);
+    int trig = sfxTrigger;
+    if (trig >= 0 && trig < sfxCount) {
+        sfxTrigger = -1;
+        sfxr_reset(&sfx, sfxTable[trig]);
     }
 
     for (int i = 0; i < count; ++i) {
@@ -359,8 +635,6 @@ void loop() {
 	};
 
 	if(ksm::press(1)) {
-		sfxTrigger = true;
-
 		int l = ksm::getBatLevel();
 		Serial.printf("Bat: %d\n", l);
 
@@ -392,6 +666,8 @@ void loop() {
 		 if(ksm::press(i)) {
 			// MIDI.sendNoteOn(i + 60, 100, 1);
 			musicSelect = i;
+			// Each key plays its own sound effect: key i -> sfxTable[i-1].
+			sfxTrigger = i - 1;
 		}
 		if(ksm::release(i)) {
 			// MIDI.sendNoteOff(i + 60, 0, 1);
