@@ -32,6 +32,20 @@ extern "C" {
 #define SFXR_SAMPLE_RATE 22050
 #endif
 
+/* Output gain / volume knob. The original sfxr scaled each voice down hard
+ * (1/8 * 0.05) to leave headroom for mixing many simultaneous voices; we drop
+ * that (see sfxr.c) so a single voice can use the full output range.
+ *
+ * The default is calibrated so sound_vol = 1.0 drives the sustained body of
+ * the sound to full scale (+/-1.0): sustain level = 1.0 (waveform) * gain,
+ * gain = exp(1)-1 = 1.718, so POST_GAIN = 1/1.718 ~= 0.582. The punch
+ * transient (1 + 2*p_env_punch) rides above this and is hard-clipped to
+ * [-1,1], reading as extra attack on a percussive blip. Lower sound_vol (or
+ * this) for headroom; raise this for a hotter, more clipped sound. */
+#ifndef SFXR_POST_GAIN
+#define SFXR_POST_GAIN 0.582f
+#endif
+
 /* The sfxr core engine's period/time constants are calibrated to 44100 Hz.
  * To emit at SFXR_SAMPLE_RATE we run the engine SFXR_SUMMANDS ticks per
  * output sample and average them (this is what jsfxr does). The ratio is

@@ -273,8 +273,6 @@ static float sfxr_engine_tick(sfxr_state *s) {
 
 /* Synthesize one output sample in [-1,1]. Assumes s->playing is set. */
 static float sfxr_next_sample(sfxr_state *s) {
-    /* master_vol is 0.05 in the original sfxr. */
-    const float master_vol = 0.05f;
     float acc = 0.0f;
     int   k;
 
@@ -284,8 +282,11 @@ static float sfxr_next_sample(sfxr_state *s) {
         acc += sfxr_engine_tick(s);
     acc /= (float)SFXR_SUMMANDS;
 
-    acc = acc / 8.0f * master_vol;
+    /* Note: the original sfxr also scaled by (1/8 * 0.05) here to leave
+     * mixing headroom for many simultaneous voices. We drop that so a single
+     * voice uses the full output range; SFXR_POST_GAIN is the volume knob. */
     acc *= s->gain;
+    acc *= SFXR_POST_GAIN;
 
     if (acc >  1.0f) acc =  1.0f;
     if (acc < -1.0f) acc = -1.0f;
