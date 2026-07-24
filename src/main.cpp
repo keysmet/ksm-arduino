@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include "keysmet.h"
+#include "colordemo.h"
 #include "sfxr.h"
 #include <LSM6DS3.h>
 
@@ -583,6 +584,7 @@ void setup() {
 
 	// Serial.begin(115200);
 	ksm::init();
+	colordemo::init();
 	initPhaseTable();
 	ksm::setupAudio(audioLoop);
 	IMU.begin();
@@ -627,13 +629,6 @@ void loop() {
 		kleft,	kdown,	kright,	kspace,		kalt,
 	};
 
-	float hue1 = 0.2f;
-	float hue2 = 0.83f;
-	float hues[] = {
-		hue1, hue2, 0,0,0,
-		hue2, hue2, hue2, hue1, hue1,
-	};
-
 	if(ksm::press(1)) {
 		int l = ksm::getBatLevel();
 		Serial.printf("Bat: %d\n", l);
@@ -667,11 +662,14 @@ void loop() {
 			// MIDI.sendNoteOn(i + 60, 100, 1);
 			musicSelect = i;
 			// Each key plays its own sound effect: key i -> sfxTable[i-1].
-			sfxTrigger = i - 1;
+			// sfxTrigger = i - 1;
 		}
 		if(ksm::release(i)) {
 			// MIDI.sendNoteOff(i + 60, 0, 1);
 		}
-		ksm::setHSV(i, i / 10.0f, 1.0f, ksm::down(i) ? 1.0f : 0.1f);
 	}
+
+	// Color / gradient / pattern demo owns the 10 key LEDs. Any key press
+	// advances to the next visual mode; each mode paints all 10 keys.
+	colordemo::update();
 }
