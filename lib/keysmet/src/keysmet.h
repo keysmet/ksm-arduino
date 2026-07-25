@@ -1,6 +1,5 @@
 #pragma once
 
-#include <functional>
 #include "keycodes.h"
 
 // PIN and KEY enums come from variant.h (provided by the board)
@@ -17,7 +16,7 @@ namespace ksm {
 	void setRumble(bool on);
 	long long getMicroTime();
 	double getTime();
-	void setupAudio(std::function<void(int16_t*, int)> callback);
+	void setupAudio(void (*callback)(int16_t*, int));
 	void init();
 	void loop();
     int getBatLevel();
@@ -25,5 +24,5 @@ namespace ksm {
 	// Keyboard HID API
 	void setKeyboard(int key, bool down);
 	void clearKeyboard();
-	void setKeyboardReportCallback(std::function<void(uint8_t modifiers, uint8_t* keys)> callback);
+	void setKeyboardReportCallback(void (*callback)(uint8_t modifiers, uint8_t* keys));
 }

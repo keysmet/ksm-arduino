@@ -88,6 +88,29 @@ recipe.c.combine.pattern="{compiler.path}{compiler.c.elf.cmd}" "-L{build.path}" 
 recipe.objcopy.hex.pattern="{compiler.path}{compiler.elf2hex.cmd}" {compiler.elf2hex.flags} {compiler.elf2hex.extra_flags} "{build.path}/{build.project_name}.elf" "{build.path}/{build.project_name}.hex"
 
 ## Create dfu package zip file
+#
+# This block exists because we reuse the Adafruit BSP instead of forking it.
+# Other third-party nRF52 platforms (Seeed's XIAO, for one) fork the whole
+# core and ship adafruit-nrfutil in their own tree, so their inherited
+# {runtime.platform.path} points somewhere real. Ours points at the Keysmet
+# platform, which has no tools/ directory — hence the "cannot find the path
+# specified" failure at the very end of an otherwise successful build.
+#
+# The tool cannot be reached the supported way either: runtime.tools.* only
+# resolves things under packages/<packager>/tools, and adafruit-nrfutil lives
+# inside the BSP's platform folder. So the path is spelled out.
+#
+# The .zip is not optional — the upload recipe (tools.nrfutil.upload.pattern,
+# inherited from adafruit:nrfutil) uploads {build.project_name}.zip, so
+# dropping this recipe breaks uploading rather than simplifying anything.
+#
+# ADAFRUIT_BSP_VERSION must match the Adafruit nRF52 version installed. Bump
+# it here when bumping the BSP; a mismatch shows up as the path error above.
+adafruit.bsp.version=1.7.0
+tools.nrfutil.path={runtime.hardware.path}/../../../adafruit/hardware/nrf52/{adafruit.bsp.version}/tools/adafruit-nrfutil
+tools.nrfutil.cmd={tools.nrfutil.path}/macos/adafruit-nrfutil
+tools.nrfutil.cmd.windows={tools.nrfutil.path}/win32/adafruit-nrfutil.exe
+tools.nrfutil.cmd.linux=adafruit-nrfutil
 recipe.objcopy.zip.pattern="{tools.nrfutil.cmd}" dfu genpkg --dev-type 0x0052 --sd-req {build.sd_fwid} --application "{build.path}/{build.project_name}.hex" "{build.path}/{build.project_name}.zip"
 
 ## Save hex

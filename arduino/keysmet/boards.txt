@@ -1,3 +1,9 @@
+# Every menu used below has to be declared here first, or the FQBN is
+# rejected as invalid and the board cannot be selected at all.
+menu.softdevice=SoftDevice
+menu.debug=Debug Level
+menu.debug_output=Debug Port
+
 # Keysmet ONE (nRF52840)
 # ----------------------
 

@@ -42,7 +42,7 @@ const int MAX_KBD_KEYS = 6;
 uint8_t kbdKeys[MAX_KBD_KEYS] = {0};
 uint8_t kbdModifiers = 0;
 bool kbdDirty = false;
-std::function<void(uint8_t, uint8_t*)> keyboardReportCallback = nullptr;
+void (*keyboardReportCallback)(uint8_t, uint8_t*) = nullptr;
 
 void setModifier(int mod, bool down) {
 	if(down)
@@ -172,9 +172,11 @@ void resetBootloader() {
 const int I2S_BUFFER_SIZE = 256;
 int16_t i2sbuffers[2][ I2S_BUFFER_SIZE<<1 ];
 int curi2sBuff = 0;
-std::function<void(int16_t*, int)> audioCallback = nullptr;
+void (*audioCallback)(int16_t*, int) = nullptr;
 
 void updateI2S() {
+	if(audioCallback == nullptr)
+		return;
 	int16_t* ptr = &i2sbuffers[curi2sBuff][0];
 	audioCallback(ptr, I2S_BUFFER_SIZE);
 	NRF_I2S->TXD.PTR = (uint32_t)ptr;
@@ -233,6 +235,18 @@ static void enterSystemOff() {
 // Light PWR_LED while the battery is charging (PIN_CHG is active low)
 void checkBattery() {
     // digitalWrite(PIN_PWR_LED, digitalRead(PIN_CHG) == LOW ? HIGH : LOW);
+}
+
+// Print a greeting the first time the USB serial monitor is opened.
+// Serial is a CDC port: its bool operator turns true once the host connects.
+bool helloPrinted = false;
+
+void checkSerialHello() {
+    if(helloPrinted || !Serial)
+        return;
+    helloPrinted = true;
+    Serial.println("Hello from Keysmet ONE!");
+    Serial.printf("Battery: %d%%\n", ksm::getBatLevel());
 }
 
 void shutdownLoop() {
@@ -458,6 +472,8 @@ void init() {
     setupPins();
     digitalWrite(PIN_PWR_ON, HIGH);
 
+    Serial.begin(115200);  // non-blocking: greeting is printed from loop() on connect
+
     delay(10);
 
     NRF_NVMC->ICACHECNF = 1;
@@ -486,6 +502,7 @@ void loop() {
 	}
 
     checkBattery();
+    checkSerialHello();
 
     delay(1);
     readKeys();
@@ -507,7 +524,7 @@ void loop() {
 }
 
 
-void setupAudio(std::function<void(int16_t*, int)> callback) {
+void setupAudio(void (*callback)(int16_t*, int)) {
 	audioCallback = callback;
 	setupI2S();
 }
@@ -553,7 +570,7 @@ void clearKeyboard() {
 	kbdDirty = true;
 }
 
-void setKeyboardReportCallback(std::function<void(uint8_t, uint8_t*)> callback) {
+void setKeyboardReportCallback(void (*callback)(uint8_t, uint8_t*)) {
 	keyboardReportCallback = callback;
 }
 
@@ -567,11 +584,11 @@ int getBatLevel() {
     float batMin = 3.2f;
     float batMax = 4.2f;
     int level = (int)(100.0f * (vBat - batMin) / (batMax - batMin));
-    Serial.printf("bat: raw=%d\n", raw);
-    Serial.printf("bat: vAdc=%.3fV\n", vAdc);
-    Serial.printf("bat: fval=%.4f\n", fval);
-    Serial.printf("bat: vBat=%.3fV\n", vBat);
-    Serial.printf("bat: level=%d%%\n", level);
+    // Serial.printf("bat: raw=%d\n", raw);
+    // Serial.printf("bat: vAdc=%.3fV\n", vAdc);
+    // Serial.printf("bat: fval=%.4f\n", fval);
+    // Serial.printf("bat: vBat=%.3fV\n", vBat);
+    // Serial.printf("bat: level=%d%%\n", level);
     return level;
 }
 
