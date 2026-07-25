@@ -19,6 +19,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 SRC_DIR="${REPO_ROOT}/arduino/keysmet"
 VARIANTS_DIR="${REPO_ROOT}/variants"
+LIB_DIR="${REPO_ROOT}/lib/keysmet"
+EXAMPLES_DIR="${REPO_ROOT}/examples"
 INDEX_FILE="${REPO_ROOT}/package_keysmet_index.json"
 
 echo "==> Building ${ARCHIVE_FILE} from ${SRC_DIR}"
@@ -36,6 +38,23 @@ cp -r "${SRC_DIR}" "${TMPDIR}/${ARCHIVE_NAME}"
 mkdir -p "${TMPDIR}/${ARCHIVE_NAME}/variants"
 cp -r "${VARIANTS_DIR}"/* "${TMPDIR}/${ARCHIVE_NAME}/variants/"
 echo "==> Bundled variants from ${VARIANTS_DIR}"
+
+# The Keysmet library rides along inside the platform, under libraries/. The
+# Arduino IDE loads a platform's bundled libraries automatically, so installing
+# the board from Boards Manager is the only step a user needs: no separate
+# Library Manager entry, and the library can never be a version behind.
+LIB_DEST="${TMPDIR}/${ARCHIVE_NAME}/libraries/Keysmet"
+mkdir -p "${LIB_DEST}"
+cp -r "${LIB_DIR}"/* "${LIB_DEST}/"
+
+# library.json is PlatformIO metadata and means nothing to the Arduino IDE.
+rm -f "${LIB_DEST}/library.json"
+
+# Examples live at the repo root (shared with PlatformIO via the #include in
+# src/main.cpp) but Arduino only shows them under File > Examples when they sit
+# inside the library, so place them there.
+cp -r "${EXAMPLES_DIR}" "${LIB_DEST}/examples"
+echo "==> Bundled library from ${LIB_DIR} (+ $(ls -1 "${EXAMPLES_DIR}" | wc -l | tr -d ' ') examples)"
 
 tar -C "${TMPDIR}" -cjf "${REPO_ROOT}/${ARCHIVE_FILE}" "${ARCHIVE_NAME}"
 
@@ -88,11 +107,11 @@ print(f"==> Updated {index_path}")
 EOF
 
 echo ""
-echo "Done! Next steps:"
-echo "  1. Commit the updated package_keysmet_index.json"
-echo "  2. Create a GitHub Release tagged v${VERSION}"
-echo "  3. Upload ${ARCHIVE_FILE} as a release asset"
-echo "  4. Host package_keysmet_index.json at a public URL, e.g.:"
-echo "     https://raw.githubusercontent.com/keysmet/ksm-arduino/main/package_keysmet_index.json"
-echo "  5. In Arduino IDE: File > Preferences > Additional boards manager URLs"
-echo "     paste the URL above, then install 'Keysmet nRF52 Boards' from Boards Manager"
+echo "Done! To publish:"
+echo "  git commit -am 'Release v${VERSION}'"
+echo "  git push"
+echo "  gh release create v${VERSION} ${ARCHIVE_FILE} --title 'v${VERSION}' --notes 'Keysmet nRF52 board support'"
+echo ""
+echo "The index must be pushed BEFORE the release is created, since Boards"
+echo "Manager reads it from the main branch:"
+echo "  https://raw.githubusercontent.com/keysmet/ksm-arduino/main/package_keysmet_index.json"
