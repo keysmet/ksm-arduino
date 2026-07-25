@@ -18,6 +18,7 @@ ARCHIVE_FILE="${ARCHIVE_NAME}.tar.bz2"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 SRC_DIR="${REPO_ROOT}/arduino/keysmet"
+VARIANTS_DIR="${REPO_ROOT}/variants"
 INDEX_FILE="${REPO_ROOT}/package_keysmet_index.json"
 
 echo "==> Building ${ARCHIVE_FILE} from ${SRC_DIR}"
@@ -28,6 +29,13 @@ TMPDIR="$(mktemp -d)"
 trap 'rm -rf "${TMPDIR}"' EXIT
 
 cp -r "${SRC_DIR}" "${TMPDIR}/${ARCHIVE_NAME}"
+
+# The variant is NOT checked in under arduino/ — variants/ is the single
+# source of truth, shared with PlatformIO via board_build.variants_dir in
+# platformio.ini. Copy it in at package time so the two can never drift.
+mkdir -p "${TMPDIR}/${ARCHIVE_NAME}/variants"
+cp -r "${VARIANTS_DIR}"/* "${TMPDIR}/${ARCHIVE_NAME}/variants/"
+echo "==> Bundled variants from ${VARIANTS_DIR}"
 
 tar -C "${TMPDIR}" -cjf "${REPO_ROOT}/${ARCHIVE_FILE}" "${ARCHIVE_NAME}"
 
