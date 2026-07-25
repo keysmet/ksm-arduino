@@ -20,7 +20,11 @@ public:
     int64_t pressTime = -1;
     bool down = false;
     bool wasDown = false;
+    bool rawDown = false;
+    int64_t rawChangeTime = 0;
 };
+
+const int DEBOUNCE_MS = 5;
 
 Adafruit_NeoPixel pixels(11, PIN_LED, NEO_GRB + NEO_KHZ800);
 int PIX_INDICES[] = { 0, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1 };
@@ -100,12 +104,21 @@ void setupPins() {
 }
 
 void readKeys() {
-    for(int i=0; i<KEY_COUNT; ++i) {
-        keys[i].wasDown = keys[i].down;
-        keys[i].down = digitalRead(KEY_PINS[i]) == LOW;
+    int64_t now = ksm::getMicroTime();
 
-        if(keys[i].down && !keys[i].wasDown) {
-            keys[i].pressTime = ksm::getMicroTime();
+    for(int i=0; i<KEY_COUNT; ++i) {
+        KeyState& k = keys[i];
+        k.wasDown = k.down;
+
+        bool raw = digitalRead(KEY_PINS[i]) == LOW;
+        if(raw != k.rawDown) {
+            k.rawDown = raw;
+            k.rawChangeTime = now;
+        }
+        else if(raw != k.down && (now - k.rawChangeTime) >= (int64_t)DEBOUNCE_MS * 1000) {
+            k.down = raw;
+            if(k.down)
+                k.pressTime = now;
         }
     }
 }
