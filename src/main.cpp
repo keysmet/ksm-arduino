@@ -19,7 +19,8 @@
 
 // #include "../examples/Sine/Sine.ino"               // audio: sine wave, one note per key
 // #include "../examples/Bytebeat/Bytebeat.ino"       // audio: one-line algorithmic music
-// #include "../examples/Sfxr/Sfxr.ino"                  // audio: retro game sound effects
+// #include "../examples/Sfxr/Sfsdqzqdsq xr.ino"                  // audio: retro game sound effects
 // #include "../examples/Colors/Colors.ino"           // LEDs: gradients, patterns, animations
 // #include "../examples/BleKeyboard/BleKeyboard.ino" // BLE HID keyboard
+// #include "../examples/Hello/Hello.ino" // serial: prints 1-10, USB sanity check
 #include "../examples/KeyboardPresets/KeyboardPresets.ino" // USB HID keyboard, MENU cycles layouts

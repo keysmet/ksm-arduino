@@ -46,6 +46,7 @@
 
 #include <keysmet.h>
 #include <Adafruit_TinyUSB.h>
+#include <bluefruit.h>
 #include <math.h>
 
 // Standard boot-keyboard report descriptor, one report, no report ID.
@@ -147,11 +148,28 @@ void selectPreset(int index) {
   gSwitchTime = ksm::getTime();
 }
 
+// Some platforms need an emulated unplug/plug event to refresh composite
+// descriptors, so the host re-reads a set that includes our HID interface.
+void refreshUSBDescriptors() {
+  TinyUSBDevice.detach();
+  delay(10);
+  TinyUSBDevice.attach();
+}
+
 void setup() {
   ksm::init();
 
-  usbHID.setStringDescriptor("Keysmet ONE Keyboard");
   usbHID.begin();
+
+  // Required even though this sketch is USB-only. The board runs the S140
+  // SoftDevice, which owns the POWER peripheral; USB power events then have
+  // to reach TinyUSB through the SoftDevice's SOC event handler, and
+  // Bluefruit.begin() is what installs it. Without this the USB peripheral
+  // never starts and the board enumerates as nothing at all — no keyboard,
+  // and no serial port either.
+  // Bluefruit.begin();
+
+  refreshUSBDescriptors();
 
   // The library assembles the HID report; we just ship it over USB.
   ksm::setKeyboardReportCallback([](uint8_t modifiers, uint8_t *keys) {
@@ -177,7 +195,7 @@ void loop() {
     menuHeldLong = false;
   }
 
-  bool connected = TinyUSBDevice.mounted() && !TinyUSBDevice.suspended();
+  bool connected = TinyUSBDevice.mounted();
 
   if (connected) {
     for (int k = KEY_LO; k <= KEY_HI; ++k) {
@@ -205,7 +223,7 @@ void loop() {
 
   if (!connected) {
     // Slow blue pulse until the host enumerates us — no layout yet.
-    float pulse = 0.5f + 0.5f * sinf(t * 3.0f);
+    float pulse = 0.5f + 0.5f * sinf(t * 10.0f);
     for (int k = KEY_LO; k <= KEY_HI; ++k)
       ksm::setHSV(k, 0.62f, 1.0f, 0.05f + pulse * 0.45f);
     return;
