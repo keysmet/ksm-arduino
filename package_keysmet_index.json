@@ -16,8 +16,8 @@
           "category": "Contributed",
           "url": "https://github.com/keysmet/ksm-arduino/releases/download/v1.0.0/keysmet-nrf52-1.0.0.tar.bz2",
           "archiveFileName": "keysmet-nrf52-1.0.0.tar.bz2",
-          "checksum": "SHA-256:ec7f113ba49c057daef8281d1aa29305150272428292ed2c308040c3e1d8a5d0",
-          "size": "37019",
+          "checksum": "SHA-256:b5ca4b505eb17c4d4acc37f1788ef1abdbe3605bbe9be06540aab1f66ef488c2",
+          "size": "37749",
           "boards": [
             {
               "name": "Keysmet ONE"
