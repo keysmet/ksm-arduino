@@ -22,7 +22,33 @@ namespace ksm {
     int getBatLevel();
 
 	// Keyboard HID API
+	//
+	// Pick a transport in setup() — initKeyboardUSB(), initKeyboardBLE(), or
+	// both — then drive keys with setKeyboard(). Each init owns its side of
+	// the plumbing (descriptors, HID service, report delivery), so a sketch
+	// never has to touch TinyUSB or Bluefruit directly.
+	//
+	//   void setup() {
+	//     ksm::init();
+	//     ksm::initKeyboardUSB();
+	//   }
+
+	// Enumerate as a USB HID keyboard.
+	void initKeyboardUSB();
+
+	// Advertise as a BLE HID keyboard, pairable as `name`.
+	void initKeyboardBLE(const char* name = "KSM1");
+
+	// True once some transport is connected and ready for reports. With both
+	// transports up, either one being ready is enough.
+	bool keyboardConnected();
+
 	void setKeyboard(int key, bool down);
 	void clearKeyboard();
+
+	// Escape hatch for custom HID: receives the assembled boot-keyboard
+	// report instead of (not in addition to) the built-in transports. Only
+	// needed if you're building your own descriptor; initKeyboardUSB() and
+	// initKeyboardBLE() are the normal path.
 	void setKeyboardReportCallback(void (*callback)(uint8_t modifiers, uint8_t* keys));
 }

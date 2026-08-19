@@ -2,6 +2,7 @@
 
 #include <Arduino.h>
 #include <Adafruit_NeoPixel.h>
+#include <Adafruit_TinyUSB.h>
 #include <Wire.h>
 #include <LSM6DS3.h>
 #include <bluefruit.h>
@@ -44,11 +45,37 @@ uint8_t kbdModifiers = 0;
 bool kbdDirty = false;
 void (*keyboardReportCallback)(uint8_t, uint8_t*) = nullptr;
 
+// Keyboard transports. Both can be active at once, in which case every
+// report goes to both. Objects are constructed lazily so a sketch that
+// never calls initKeyboardUSB()/initKeyboardBLE() doesn't pay for them.
+bool kbdUSBActive = false;
+bool kbdBLEActive = false;
+
+// Standard boot-keyboard report descriptor: 8-byte report, no report ID.
+uint8_t const kbdHIDDescriptor[] = { TUD_HID_REPORT_DESC_KEYBOARD() };
+
+Adafruit_USBD_HID* usbKbd = nullptr;
+BLEDis* bleKbdDis = nullptr;
+BLEHidAdafruit* bleKbd = nullptr;
+
 void setModifier(int mod, bool down) {
 	if(down)
 		kbdModifiers |= (1 << mod);
 	else
 		kbdModifiers &= ~(1 << mod);
+}
+
+// Deliver the current report. A custom callback replaces the built-in
+// transports; otherwise every active transport gets it.
+void sendKeyboardReport() {
+	if(keyboardReportCallback != nullptr) {
+		keyboardReportCallback(kbdModifiers, kbdKeys);
+		return;
+	}
+	if(kbdUSBActive && usbKbd != nullptr && usbKbd->ready())
+		usbKbd->keyboardReport(0, kbdModifiers, kbdKeys);
+	if(kbdBLEActive && bleKbd != nullptr && Bluefruit.connected())
+		bleKbd->keyboardReport(kbdModifiers, kbdKeys);
 }
 
 bool hasModifier(int mod) {
@@ -508,9 +535,9 @@ void loop() {
     readKeys();
 
 	// Send keyboard report if state changed
-	if(kbdDirty && keyboardReportCallback != nullptr) {
+	if(kbdDirty) {
 		kbdDirty = false;
-		keyboardReportCallback(kbdModifiers, kbdKeys);
+		sendKeyboardReport();
 	}
 
     // if(checkMenuStreakPress()) {
@@ -572,6 +599,65 @@ void clearKeyboard() {
 
 void setKeyboardReportCallback(void (*callback)(uint8_t, uint8_t*)) {
 	keyboardReportCallback = callback;
+}
+
+void initKeyboardUSB() {
+	if(kbdUSBActive)
+		return;
+
+	usbKbd = new Adafruit_USBD_HID(kbdHIDDescriptor, sizeof(kbdHIDDescriptor),
+	                               HID_ITF_PROTOCOL_KEYBOARD, 2, false);
+	usbKbd->begin();
+	kbdUSBActive = true;
+
+	// The core starts USB before setup() runs, so the host has already read a
+	// descriptor set without our HID interface in it. Fake an unplug/replug
+	// to force a fresh enumeration, or the keyboard never shows up.
+	TinyUSBDevice.detach();
+	delay(10);
+	TinyUSBDevice.attach();
+}
+
+void initKeyboardBLE(const char* name) {
+	if(kbdBLEActive)
+		return;
+
+	Bluefruit.begin();
+	Bluefruit.setTxPower(8);
+	Bluefruit.setName(name);
+
+	bleKbdDis = new BLEDis();
+	bleKbdDis->setManufacturer("Keysmet");
+	bleKbdDis->setModel(name);
+	bleKbdDis->begin();
+
+	bleKbd = new BLEHidAdafruit();
+	bleKbd->begin();
+
+	// Apple wants a min connection interval >= 11.25ms for HID.
+	// Units of 1.25ms: 3 = 11.25ms, 9 = 15ms.
+	Bluefruit.Periph.setConnInterval(3, 9);
+
+	kbdBLEActive = true;
+
+	Bluefruit.Advertising.addFlags(BLE_GAP_ADV_FLAGS_LE_ONLY_GENERAL_DISC_MODE);
+	Bluefruit.Advertising.addTxPower();
+	Bluefruit.Advertising.addAppearance(BLE_APPEARANCE_HID_KEYBOARD);
+	Bluefruit.Advertising.addService(*bleKbd);
+	Bluefruit.Advertising.addName();
+
+	Bluefruit.Advertising.restartOnDisconnect(true);
+	Bluefruit.Advertising.setInterval(32, 244); // units of 0.625 ms
+	Bluefruit.Advertising.setFastTimeout(30);   // seconds in fast mode
+	Bluefruit.Advertising.start(0);             // 0 = advertise until connected
+}
+
+bool keyboardConnected() {
+	if(kbdUSBActive && TinyUSBDevice.mounted())
+		return true;
+	if(kbdBLEActive && Bluefruit.connected() > 0)
+		return true;
+	return false;
 }
 
 int getBatLevel() {

@@ -31,11 +31,11 @@
   modifier is pressed just before the key and released just after, and
   the key washes out toward white while held so combos look distinct.
 
-  How it works: ksm::setKeyboard() tracks which HID keys are held and
-  builds a standard 6-key HID report. Whenever that report changes, the
-  callback set with ksm::setKeyboardReportCallback() fires and we hand
-  it to TinyUSB. The library owns the key state; this sketch only
-  decides which physical key means what.
+  How it works: ksm::initKeyboardUSB() sets the board up as a USB HID
+  keyboard, and ksm::setKeyboard() tracks which keys are held and ships
+  the report. The library owns the transport and the key state; this
+  sketch only decides which physical key means what. Swap in
+  ksm::initKeyboardBLE() for a wireless keyboard, or call both.
 
   Note: media/consumer keys aren't sent here — the library's
   setKeyboard() ignores CONSUMER_* codes, so a media preset would look
@@ -45,17 +45,7 @@
 */
 
 #include <keysmet.h>
-#include <Adafruit_TinyUSB.h>
-#include <bluefruit.h>
 #include <math.h>
-
-// Standard boot-keyboard report descriptor, one report, no report ID.
-uint8_t const hidReportDescriptor[] = {
-  TUD_HID_REPORT_DESC_KEYBOARD()
-};
-
-Adafruit_USBD_HID usbHID(hidReportDescriptor, sizeof(hidReportDescriptor),
-                         HID_ITF_PROTOCOL_KEYBOARD, 2, false);
 
 constexpr int KEY_LO = 1;
 constexpr int KEY_HI = 10;
@@ -148,34 +138,9 @@ void selectPreset(int index) {
   gSwitchTime = ksm::getTime();
 }
 
-// Some platforms need an emulated unplug/plug event to refresh composite
-// descriptors, so the host re-reads a set that includes our HID interface.
-void refreshUSBDescriptors() {
-  TinyUSBDevice.detach();
-  delay(10);
-  TinyUSBDevice.attach();
-}
-
 void setup() {
   ksm::init();
-
-  usbHID.begin();
-
-  // Required even though this sketch is USB-only. The board runs the S140
-  // SoftDevice, which owns the POWER peripheral; USB power events then have
-  // to reach TinyUSB through the SoftDevice's SOC event handler, and
-  // Bluefruit.begin() is what installs it. Without this the USB peripheral
-  // never starts and the board enumerates as nothing at all — no keyboard,
-  // and no serial port either.
-  // Bluefruit.begin();
-
-  refreshUSBDescriptors();
-
-  // The library assembles the HID report; we just ship it over USB.
-  ksm::setKeyboardReportCallback([](uint8_t modifiers, uint8_t *keys) {
-    if (usbHID.ready())
-      usbHID.keyboardReport(0, modifiers, keys);
-  });
+  ksm::initKeyboardUSB();
 
   selectPreset(0);
 }
@@ -195,7 +160,7 @@ void loop() {
     menuHeldLong = false;
   }
 
-  bool connected = TinyUSBDevice.mounted();
+  bool connected = ksm::keyboardConnected();
 
   if (connected) {
     for (int k = KEY_LO; k <= KEY_HI; ++k) {
